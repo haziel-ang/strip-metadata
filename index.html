@@ -73,13 +73,7 @@
   @keyframes rot{to{transform:rotate(360deg)}}
 
   .body{padding:22px}
-  .success{display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px}
-  .success .ok{width:54px;height:54px;border-radius:50%;background:linear-gradient(120deg,#0f8a6f,#0a6b56);display:grid;place-items:center}
-  .success .ok svg{width:28px;height:28px;stroke:#fff;stroke-width:3;fill:none}
   @keyframes draw{to{stroke-dashoffset:0}}
-  .success p{font-size:1.05rem}
-  .success p b{font-family:"Fraunces",serif;font-weight:500;font-size:1.25rem}
-  .success p small{color:var(--ink-soft);font-size:.92rem}
 
   .btn{width:100%;border:none;border-radius:14px;padding:15px;font-family:inherit;font-size:1rem;font-weight:600;
     cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:transform .15s,box-shadow .25s,background .2s;-webkit-tap-highlight-color:transparent}
@@ -142,6 +136,28 @@
     background:rgba(15,138,111,.12);padding:2px 7px;border-radius:100px}
   .m-empty{padding:14px;text-align:center;color:var(--ink-soft);font-size:.9rem;background:#f6f8f7;border-radius:12px;border:1px solid var(--line);margin-bottom:20px}
   .m-actions{display:flex;flex-direction:column;gap:10px}
+
+  /* CHOICE (dopo il caricamento) */
+  .choice{display:flex;flex-direction:column;gap:10px;text-align:center}
+  .choice-q{font-family:"Fraunces",serif;font-weight:500;font-size:1.15rem;margin-bottom:4px}
+  .choice .sublabel{font-size:.8rem;color:var(--ink-soft);font-weight:500;margin-top:-4px}
+  .btn-outline{background:#fff;color:var(--accent-deep);border:1.5px solid #cfe6dd}
+  .btn-outline:hover{background:#f2faf7}
+
+  /* ANALISI ORIGINE AI */
+  .ai-verdict{display:flex;gap:13px;align-items:flex-start;padding:14px;border-radius:14px;margin-bottom:14px;border:1px solid var(--line);background:#f6f8f7}
+  .ai-verdict.detected{background:var(--warn-bg);border-color:#f3d3c9}
+  .ai-verdict.maybe{background:#fff7e8;border-color:#f0dcae}
+  .ai-verdict.clear{background:#effaf6;border-color:#c3e8da}
+  .ai-verdict .ic{flex:0 0 36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:19px;background:#fff;border:1px solid var(--line)}
+  .ai-verdict .tx h4{font-family:"Fraunces",serif;font-weight:500;font-size:1.05rem;line-height:1.2}
+  .ai-verdict .tx p{font-size:.84rem;color:var(--ink-soft);margin-top:3px}
+  .ai-verdict.detected .tx h4{color:var(--warn)}
+  .ai-verdict.maybe .tx h4{color:#9a6b12}
+  .ai-verdict.clear .tx h4{color:var(--accent-deep)}
+  .ai-list{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+  .ai-note{font-size:.78rem;color:var(--ink-soft);line-height:1.55;background:#f6f8f7;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:11px 13px;margin-bottom:18px}
+  .pill.ai{color:#9a6b12;background:rgba(200,150,20,.14)}
 </style>
 </head>
 <body>
@@ -152,7 +168,7 @@
   <header>
     <span class="badge"><span class="dot"></span>100% nel tuo browser</span>
     <h1>Pulisci i tuoi <em>scatti</em></h1>
-    <p class="sub">Rimuovi posizione GPS, modello del telefono e ogni metadato nascosto. Niente lascia il tuo dispositivo.</p>
+    <p class="sub">Rimuovi posizione GPS, modello del telefono e ogni metadato nascosto — oppure analizza l'origine AI dell'immagine. Niente lascia il tuo dispositivo.</p>
   </header>
 
   <div class="card">
@@ -174,11 +190,18 @@
         <div class="statuschip" id="chip"><span class="spin"></span><span id="chiptx">Analisi…</span></div>
       </div>
       <div class="body">
-        <div class="success" id="success">
-          <div class="ok"><svg viewBox="0 0 24 24" style="stroke-dasharray:24;stroke-dashoffset:24;animation:draw .5s .1s forwards"><path d="M4 12l5 5L20 6"/></svg></div>
-          <p><b>Immagine ripulita</b><br><small id="sSub"></small></p>
-          <button class="btn btn-primary" id="openResult">Vedi risultato e scarica</button>
-          <button class="relink" id="reset">↺ Pulisci un'altra immagine</button>
+        <div class="choice" id="choice">
+          <p class="choice-q">Cosa vuoi fare con questa immagine?</p>
+          <button class="btn btn-primary" id="actClean">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l4-1 11-11-3-3L4 17l-1 4z"/><path d="M14 6l3 3"/></svg>
+            Pulisci i metadati
+          </button>
+          <button class="btn btn-outline" id="actAnalyze">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+            Analizza origine AI
+          </button>
+          <span class="sublabel" id="choiceHint"></span>
+          <button class="relink" id="reset">↺ Carica un'altra immagine</button>
         </div>
       </div>
     </div>
@@ -190,7 +213,8 @@
       Elaborazione locale
     </span><br>
     Nessuna immagine viene caricata online. Puoi usarla anche offline.<br>
-    <small>*I file HEIC vengono convertiti in JPG durante la pulizia.</small>
+    <small>*I file HEIC vengono convertiti in JPG durante la pulizia.</small><br>
+    <small>L'analisi AI legge solo i metadati: non rileva i watermark invisibili nei pixel (es. SynthID). Non usare questo strumento per spacciare contenuti AI come reali o per rimuovere l'attribuzione altrui.</small>
   </footer>
 </div>
 
@@ -206,7 +230,9 @@
     <div class="img-box"><img id="mImg" alt="immagine pulita"></div>
     <p class="ios-hint" id="iosHint">Per salvarla nelle Foto: <b>tieni premuto</b> sull'immagine → <b>Salva immagine</b>, oppure usa il pulsante qui sotto.</p>
     <div class="m-sizes" id="mSizes"></div>
-    <div class="m-section-title">Metadati rimossi</div>
+    <div class="m-section-title" id="mAITitle">Analisi origine AI</div>
+    <div id="mAIWrap"></div>
+    <div class="m-section-title" id="mMetaTitle">Metadati rimossi</div>
     <div class="m-meta" id="mMeta"></div>
     <div class="m-actions" id="mActions"></div>
   </div>
@@ -218,15 +244,19 @@
   const $=id=>document.getElementById(id);
   const drop=$("drop"), fileInput=$("file"), stage=$("stage"), frame=$("frame"),
         preview=$("preview"), chip=$("chip"), chiptx=$("chiptx"),
-        success=$("success"), sSub=$("sSub"), openResult=$("openResult"), reset=$("reset"),
+        choice=$("choice"), actClean=$("actClean"), actAnalyze=$("actAnalyze"),
+        choiceHint=$("choiceHint"), reset=$("reset"),
         modal=$("modal"), backdrop=$("backdrop"), mClose=$("mClose"),
-        mImg=$("mImg"), mSub=$("mSub"), mSizes=$("mSizes"), mMeta=$("mMeta"),
+        mImg=$("mImg"), mTitle=$("mTitle"), mSub=$("mSub"), mSizes=$("mSizes"),
+        mAITitle=$("mAITitle"), mAIWrap=$("mAIWrap"),
+        mMetaTitle=$("mMetaTitle"), mMeta=$("mMeta"),
         mActions=$("mActions"), iosHint=$("iosHint");
 
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
                 (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
 
-  let cleanedURL=null, cleanedFile=null, lastReport=null, lastSizes=null;
+  let cleanedURL=null, cleanedFile=null, originalURL=null, currentFile=null,
+      lastReport=null, lastSizes=null, lastAI=null, modalMode="clean";
 
   function fmtBytes(b){
     if(b<1024) return b+" B";
@@ -346,6 +376,116 @@
     return {items:[],bytes:0,gps:null,unknown:true};
   }
 
+  /* === ANALISI ORIGINE AI (solo metadati) ===
+     Legge SOLO i metadati/segmenti del file (non i pixel): manifest C2PA,
+     etichetta IPTC DigitalSourceType, marcatori XMP e nomi di generatori AI.
+     NON rileva i watermark invisibili nei pixel come Google SynthID — per
+     quelli serve il rilevatore ufficiale di Google. */
+  function aiScan(buf,type){
+    const view=new DataView(buf), bytes=[]; const flags={c2paBox:false};
+    function push(start,end){ for(let i=start;i<end&&i<view.byteLength;i++) bytes.push(view.getUint8(i)); }
+    try{
+      if(type==="image/jpeg"){
+        let off=2;
+        while(off<view.byteLength-1){
+          if(view.getUint8(off)!==0xFF){off++;continue;}
+          const marker=view.getUint16(off);
+          if(marker===0xFFDA||marker===0xFFD9) break;
+          if(marker>=0xFFD0&&marker<=0xFFD9){off+=2;continue;}
+          const len=view.getUint16(off+2);
+          if((marker>=0xFFE0&&marker<=0xFFEF)||marker===0xFFFE){
+            push(off+4, off+2+len);
+            if(marker===0xFFEB) flags.c2paBox=true; // APP11 → contenitore JUMBF/C2PA
+          }
+          off+=2+len;
+        }
+      }else if(type==="image/png"){
+        let off=8;
+        while(off<view.byteLength){
+          const len=view.getUint32(off);
+          let t="";for(let i=0;i<4;i++)t+=String.fromCharCode(view.getUint8(off+4+i));
+          if(["tEXt","iTXt","zTXt","eXIf","iCCP","caBX"].includes(t)) push(off+8, off+8+len);
+          if(t==="caBX") flags.c2paBox=true; // chunk privato C2PA
+          if(t==="IEND") break;
+          off+=12+len;
+        }
+      }
+    }catch(e){}
+    let s="";
+    try{ s=new TextDecoder("latin1").decode(Uint8Array.from(bytes)); }
+    catch(e){ for(let i=0;i<bytes.length;i++) s+=String.fromCharCode(bytes[i]); }
+    return {text:s, lower:s.toLowerCase(), flags};
+  }
+
+  function analyzeAI(buf,type){
+    const scan=aiScan(buf,type), lower=scan.lower, signals=[];
+    let strong=false, maybe=false;
+
+    if(scan.flags.c2paBox || lower.includes("c2pa") || lower.includes("contentauth") || lower.includes("content credential")){
+      strong=true;
+      signals.push({strong:true,ico:"🔏",k:"Credenziali di provenienza C2PA",v:"Manifest Content Credentials incorporato (dichiara origine/cronologia, usato per marcare contenuti AI)"});
+    }
+
+    const dst=[
+      ["compositewithtrainedalgorithmicmedia","Composito con elementi generati da AI (IPTC)"],
+      ["trainedalgorithmicmedia","Generata da AI addestrata — IPTC trainedAlgorithmicMedia"],
+      ["compositesynthetic","Composito sintetico (IPTC)"],
+      ["algorithmicmedia","Media algoritmica (IPTC)"]
+    ];
+    let dstHit=null;
+    for(const [tok,label] of dst){ if(lower.includes(tok)){ dstHit=label; break; } }
+    if(dstHit){ strong=true; signals.push({strong:true,ico:"🏷️",k:"Etichetta IPTC di origine digitale",v:dstHit}); }
+    else if(lower.includes("digitalsourcetype")){ maybe=true; signals.push({ico:"🏷️",k:"Campo IPTC DigitalSourceType presente",v:"presente, ma con valore non riconosciuto come AI"}); }
+
+    const gens=[
+      ["midjourney","Midjourney"],["stable diffusion","Stable Diffusion"],["stablediffusion","Stable Diffusion"],
+      ["dall-e","DALL·E"],["dall·e","DALL·E"],["gpt-image","GPT-image (OpenAI)"],["sora","Sora (OpenAI)"],
+      ["adobe firefly","Adobe Firefly"],["firefly","Adobe Firefly"],
+      ["nano banana","Gemini 2.5 Flash Image (nano banana)"],["gemini","Google Gemini"],["imagen","Google Imagen"],
+      ["leonardo.ai","Leonardo.Ai"],["ideogram","Ideogram"],["bing image creator","Bing Image Creator"],
+      ["flux.1","FLUX"],["black forest labs","FLUX (Black Forest Labs)"],
+      ["runwayml","Runway"],["recraft","Recraft"],["nightcafe","NightCafe"],["novelai","NovelAI"],["qwen image","Qwen Image"]
+    ];
+    const foundGens=[];
+    for(const [tok,label] of gens){ if(lower.includes(tok)&&!foundGens.includes(label)) foundGens.push(label); }
+    if(foundGens.length){ maybe=true; signals.push({ico:"🤖",k:"Software/generatore AI nei metadati",v:foundGens.join(", ")}); }
+
+    const phrases=[["made with ai","“Made with AI”"],["ai generated","“AI generated”"],["generated by ai","“Generated by AI”"],["created with ai","“Created with AI”"]];
+    const foundPhr=[];
+    for(const [tok,label] of phrases){ if(lower.includes(tok)) foundPhr.push(label); }
+    if(foundPhr.length){ maybe=true; signals.push({ico:"💬",k:"Dichiarazione testuale nei metadati",v:foundPhr.join(", ")}); }
+
+    return { level: strong?"detected":(maybe?"maybe":"clear"), signals };
+  }
+
+  const AI_VERDICTS={
+    detected:{cls:"detected",ic:"🤖",h:"Segnali di origine AI rilevati",p:"Nei metadati ci sono credenziali o etichette che indicano contenuto generato o modificato con AI."},
+    maybe:{cls:"maybe",ic:"❓",h:"Possibili indizi di AI",p:"Trovati riferimenti a strumenti AI nei metadati. Indizio non conclusivo."},
+    clear:{cls:"clear",ic:"✓",h:"Nessun segnale AI nei metadati",p:"Non risultano credenziali C2PA, etichette IPTC né nomi di generatori AI nei metadati del file."}
+  };
+  function renderAI(ai){
+    mAIWrap.innerHTML="";
+    const v=AI_VERDICTS[ai.level];
+    const banner=document.createElement("div");
+    banner.className="ai-verdict "+v.cls;
+    banner.innerHTML='<div class="ic">'+v.ic+'</div><div class="tx"><h4>'+v.h+'</h4><p>'+v.p+'</p></div>';
+    mAIWrap.appendChild(banner);
+    if(ai.signals.length){
+      const list=document.createElement("div"); list.className="ai-list";
+      ai.signals.forEach(s=>{
+        const el=document.createElement("div"); el.className="m-row"+(s.strong?" warn":"");
+        el.innerHTML='<div class="ic">'+s.ico+'</div><div class="tx">'+
+          '<div class="k">'+s.k+'<span class="pill '+(s.strong?'':'ai')+'">'+(s.strong?'AI':'indizio')+'</span></div>'+
+          '<div class="v" style="text-decoration:none">'+s.v+'</div></div>';
+        list.appendChild(el);
+      });
+      mAIWrap.appendChild(list);
+    }
+    const note=document.createElement("div"); note.className="ai-note";
+    note.innerHTML="<b>Limite importante:</b> questa analisi legge solo i <b>metadati</b> del file. I <b>watermark invisibili nei pixel</b> (es. Google <b>SynthID</b> di Gemini/Imagen) <b>non sono verificabili in questo browser</b>: serve il rilevatore ufficiale di Google. I metadati inoltre possono essere stati rimossi, quindi la loro assenza <b>non prova</b> che un'immagine non sia generata da AI.";
+    mAIWrap.appendChild(note);
+  }
+
   async function cleanImage(file){
     let bitmap;
     try{ bitmap=await createImageBitmap(file,{imageOrientation:"from-image"}); }
@@ -364,79 +504,119 @@
   async function handleFile(file){
     if(!file||!file.type.startsWith("image/")) return;
     drop.classList.add("hidden"); stage.classList.add("show");
-    success.style.visibility="hidden";
+    choice.style.visibility="hidden";
     chip.classList.add("show"); chiptx.textContent="Analisi…"; frame.classList.add("scanning");
 
-    const url=URL.createObjectURL(file);
-    preview.src=url;
+    if(originalURL) URL.revokeObjectURL(originalURL);
+    originalURL=URL.createObjectURL(file);
+    preview.src=originalURL;
+    currentFile=file;
 
     const buf=await file.arrayBuffer();
-    const report=analyze(buf,file.type);
+    lastReport=analyze(buf,file.type);
+    lastAI=analyzeAI(buf,file.type);
     await new Promise(r=>setTimeout(r,650));
 
-    chiptx.textContent="Rimozione metadati…";
+    frame.classList.remove("scanning"); chip.classList.remove("show");
+    if(lastAI.level==="detected") choiceHint.textContent="Rilevati segnali di origine AI nei metadati.";
+    else if(lastAI.level==="maybe") choiceHint.textContent="Possibili indizi AI nei metadati.";
+    else choiceHint.textContent=lastReport.items.length
+      ? lastReport.items.length+" metadato/i presenti · nessun segnale AI"
+      : "Nessun metadato evidente · nessun segnale AI";
+    choice.style.visibility="visible";
+  }
+
+  async function doClean(){
+    if(!currentFile) return;
+    choice.style.visibility="hidden";
+    chip.classList.add("show"); chiptx.textContent="Rimozione metadati…"; frame.classList.add("scanning");
     let cleaned;
-    try{ cleaned=await cleanImage(file); }
+    try{ cleaned=await cleanImage(currentFile); }
     catch(e){
       frame.classList.remove("scanning"); chip.classList.remove("show");
-      success.style.visibility="visible";
-      sSub.textContent="Questo formato non è elaborabile in questo browser — prova con un JPG o PNG.";
-      openResult.classList.add("hidden");
+      choice.style.visibility="visible";
+      choiceHint.textContent="Questo formato non è elaborabile in questo browser — prova con un JPG o PNG.";
       return;
     }
     await new Promise(r=>setTimeout(r,400));
     frame.classList.remove("scanning"); chip.classList.remove("show");
 
-    cleanedFile=new File([cleaned.blob], renameClean(file.name,cleaned.type), {type:cleaned.type});
+    cleanedFile=new File([cleaned.blob], renameClean(currentFile.name,cleaned.type), {type:cleaned.type});
     if(cleanedURL)URL.revokeObjectURL(cleanedURL);
     cleanedURL=URL.createObjectURL(cleaned.blob);
     preview.src=cleanedURL;
+    lastSizes={orig:currentFile.size, clean:cleaned.blob.size, w:cleaned.w, h:cleaned.h};
+    choice.style.visibility="visible";
 
-    lastReport=report;
-    lastSizes={orig:file.size, clean:cleaned.blob.size, w:cleaned.w, h:cleaned.h};
+    modalMode="clean";
+    populateModal();
+    openModal();
+  }
 
-    let sub;
-    if(report.gps) sub="Posizione GPS e tutti i metadati rimossi.";
-    else if(report.items.length) sub=report.items.length+" tipo/i di dato rimossi.";
-    else sub="Immagine riesportata senza alcun metadato.";
-    sSub.textContent=sub;
-    openResult.classList.remove("hidden");
-    success.style.visibility="visible";
-
-    URL.revokeObjectURL(url);
+  function showAnalysis(){
+    if(!currentFile) return;
+    modalMode="analyze";
     populateModal();
     openModal();
   }
 
   function populateModal(){
-    mImg.src=cleanedURL;
-    if(lastReport && lastReport.gps) mSub.textContent="Posizione GPS e altri dati eliminati.";
-    else if(lastReport && lastReport.items.length) mSub.textContent="Dati nascosti eliminati con successo.";
-    else mSub.textContent="Riesportata senza alcun metadato.";
+    const analyzeOnly = modalMode==="analyze";
+    mImg.src = analyzeOnly ? originalURL : cleanedURL;
 
-    mSizes.innerHTML='<span>Originale <b>'+fmtBytes(lastSizes.orig)+'</b></span>'+
-      '<span class="arrow">→</span>'+
-      '<span>Pulita <b>'+fmtBytes(lastSizes.clean)+'</b> · '+lastSizes.w+'×'+lastSizes.h+'</span>';
+    if(analyzeOnly){
+      mTitle.textContent="Analisi origine AI";
+      mSub.textContent="Lettura dei metadati dell'immagine caricata.";
+      mSizes.style.display="none";
+      mMetaTitle.textContent="Metadati presenti nel file";
+    }else{
+      mTitle.textContent="Immagine ripulita";
+      if(lastReport && lastReport.gps) mSub.textContent="Posizione GPS e altri dati eliminati.";
+      else if(lastReport && lastReport.items.length) mSub.textContent="Dati nascosti eliminati con successo.";
+      else mSub.textContent="Riesportata senza alcun metadato.";
+      mSizes.style.display="";
+      mSizes.innerHTML='<span>Originale <b>'+fmtBytes(lastSizes.orig)+'</b></span>'+
+        '<span class="arrow">→</span>'+
+        '<span>Pulita <b>'+fmtBytes(lastSizes.clean)+'</b> · '+lastSizes.w+'×'+lastSizes.h+'</span>';
+      mMetaTitle.textContent="Metadati rimossi";
+    }
+
+    renderAI(lastAI);
 
     mMeta.innerHTML="";
     if(lastReport && lastReport.items.length){
       lastReport.items.forEach(it=>{
         const el=document.createElement("div");
         el.className="m-row"+(it.warn?" warn":"");
+        const pill = analyzeOnly ? "" : '<span class="pill">rimosso</span>';
         el.innerHTML='<div class="ic">'+it.ico+'</div><div class="tx">'+
-          '<div class="k">'+it.k+'<span class="pill">rimosso</span></div>'+
-          '<div class="v">'+it.v+'</div></div>';
+          '<div class="k">'+it.k+pill+'</div>'+
+          '<div class="v"'+(analyzeOnly?' style="text-decoration:none"':'')+'>'+it.v+'</div></div>';
         mMeta.appendChild(el);
       });
     }else{
       const e=document.createElement("div"); e.className="m-empty";
       e.textContent=(lastReport&&lastReport.unknown)
-        ? "Formato non analizzabile in dettaglio, ma l'immagine è stata comunque riesportata senza metadati."
-        : "Nessun metadato evidente era presente. L'immagine è stata comunque riesportata pulita.";
+        ? "Formato non analizzabile in dettaglio in questo browser."
+        : (analyzeOnly ? "Nessun metadato evidente presente nel file."
+                       : "Nessun metadato evidente era presente. L'immagine è stata comunque riesportata pulita.");
       mMeta.appendChild(e);
     }
 
+    buildActions(analyzeOnly);
+  }
+
+  function buildActions(analyzeOnly){
     mActions.innerHTML="";
+    if(analyzeOnly){
+      iosHint.classList.remove("show");
+      const c=document.createElement("button");
+      c.className="btn btn-primary";
+      c.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l4-1 11-11-3-3L4 17l-1 4z"/><path d="M14 6l3 3"/></svg>Pulisci i metadati';
+      c.onclick=()=>{ closeModal(); doClean(); };
+      mActions.appendChild(c);
+      return;
+    }
     const canShare = navigator.canShare && cleanedFile && navigator.canShare({files:[cleanedFile]});
     const secure = window.isSecureContext;
     if(isIOS){
@@ -483,14 +663,17 @@
   function doReset(){
     closeModal();
     stage.classList.remove("show"); drop.classList.remove("hidden");
-    fileInput.value=""; if(cleanedURL){URL.revokeObjectURL(cleanedURL);cleanedURL=null;}
-    cleanedFile=null; lastReport=null; lastSizes=null;
+    fileInput.value="";
+    if(cleanedURL){URL.revokeObjectURL(cleanedURL);cleanedURL=null;}
+    if(originalURL){URL.revokeObjectURL(originalURL);originalURL=null;}
+    cleanedFile=null; currentFile=null; lastReport=null; lastSizes=null; lastAI=null;
   }
 
   drop.addEventListener("click",()=>fileInput.click());
   fileInput.addEventListener("change",e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
   reset.addEventListener("click",doReset);
-  openResult.addEventListener("click",openModal);
+  actClean.addEventListener("click",doClean);
+  actAnalyze.addEventListener("click",showAnalysis);
   mClose.addEventListener("click",closeModal);
   backdrop.addEventListener("click",closeModal);
   document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&modal.classList.contains("open")) closeModal(); });
