@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="it" style="background:#eef1ef!important;color:#16221d!important;color-scheme:light only!important;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<title>Pulisci — rimuovi i metadati dalle immagini</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef1ef;--ink:#16221d;--ink-soft:#5a6661;--paper:#ffffff;
+    --accent:#0f8a6f;--accent-deep:#0a6b56;--warn:#c0492f;--warn-bg:#fcefe9;
+    --line:#e2e7e3;--radius:22px;
+    --shadow:0 1px 2px rgba(20,40,33,.04), 0 12px 32px -8px rgba(20,40,33,.12), 0 40px 80px -32px rgba(20,40,33,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#eef1ef!important;color:#16221d!important;color-scheme:light only!important;}
+  body{font-family:"Hanken Grotesk",system-ui,sans-serif;min-height:100dvh;color:var(--ink);
+    -webkit-font-smoothing:antialiased;line-height:1.5;position:relative;overflow-x:hidden;
+    padding:max(24px,env(safe-area-inset-top)) 20px max(40px,env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;align-items:center;}
+  body.lock{overflow:hidden}
+  .mesh{position:fixed;inset:0;z-index:-2;overflow:hidden}
+  .mesh::before,.mesh::after{content:"";position:absolute;border-radius:50%;filter:blur(80px);opacity:.5}
+  .mesh::before{width:55vw;height:55vw;background:radial-gradient(circle,#7fd9c2,transparent 70%);top:-18vw;right:-12vw;animation:drift 22s ease-in-out infinite alternate}
+  .mesh::after{width:48vw;height:48vw;background:radial-gradient(circle,#bfe3ff,transparent 70%);bottom:-16vw;left:-14vw;animation:drift 26s ease-in-out infinite alternate-reverse}
+  @keyframes drift{to{transform:translate(40px,30px) scale(1.1)}}
+  .grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  .wrap{width:100%;max-width:560px;display:flex;flex-direction:column;gap:26px}
+  header{text-align:center;opacity:0;animation:rise .7s .05s cubic-bezier(.2,.8,.2,1) forwards}
+  .badge{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;font-weight:600;letter-spacing:.02em;
+    color:var(--accent-deep);background:rgba(15,138,111,.1);padding:6px 13px;border-radius:100px;margin-bottom:16px}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(15,138,111,.45)}70%{box-shadow:0 0 0 9px rgba(15,138,111,0)}100%{box-shadow:0 0 0 0 rgba(15,138,111,0)}}
+  h1{font-family:"Fraunces",serif;font-weight:500;font-size:clamp(2.1rem,8vw,2.9rem);line-height:1.05;letter-spacing:-.01em}
+  h1 em{font-style:italic;color:var(--accent-deep)}
+  .sub{color:var(--ink-soft);font-size:1.02rem;margin-top:12px;max-width:30ch;margin-inline:auto}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    overflow:hidden;opacity:0;animation:rise .7s .18s cubic-bezier(.2,.8,.2,1) forwards}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+  .drop{padding:38px 26px;text-align:center;cursor:pointer;position:relative;transition:background .25s}
+  .drop:hover{background:#f7faf8}
+  .drop.over{background:#effaf6}
+  .drop.over .ring{transform:scale(1.06);border-color:var(--accent)}
+  .ring{width:78px;height:78px;margin:0 auto 18px;border-radius:24px;border:2px dashed #c7d3cd;display:grid;place-items:center;
+    transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s;background:#f7faf8}
+  .ring svg{width:34px;height:34px;stroke:var(--accent-deep);animation:float 3.2s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .drop h2{font-family:"Fraunces",serif;font-weight:500;font-size:1.3rem;margin-bottom:5px}
+  .drop p{color:var(--ink-soft);font-size:.92rem}
+  .drop .hint{margin-top:14px;font-size:.8rem;color:var(--ink-soft);display:flex;gap:7px;justify-content:center;align-items:center}
+
+  .stage{display:none}
+  .stage.show{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .frame{position:relative;background:#0d1714;aspect-ratio:4/3;display:grid;place-items:center;overflow:hidden}
+  .frame img{width:100%;height:100%;object-fit:contain;display:block}
+  .frame.scanning::after{content:"";position:absolute;left:0;right:0;height:34%;
+    background:linear-gradient(to bottom,transparent,rgba(120,236,200,.55),transparent);animation:scan 1.15s cubic-bezier(.55,0,.45,1) infinite}
+  @keyframes scan{0%{top:-34%}100%{top:100%}}
+  .frame.scanning::before{content:"";position:absolute;inset:0;z-index:2;
+    background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.12) 3px 4px);mix-blend-mode:overlay;opacity:.6}
+  .statuschip{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:3;font-size:.82rem;font-weight:600;
+    color:#0d1714;background:rgba(255,255,255,.92);padding:7px 14px;border-radius:100px;display:none;align-items:center;gap:8px;backdrop-filter:blur(6px)}
+  .statuschip.show{display:inline-flex}
+  .spin{width:13px;height:13px;border:2px solid #b9c6c0;border-top-color:var(--accent);border-radius:50%;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  .body{padding:22px}
+  .success{display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px}
+  .success .ok{width:54px;height:54px;border-radius:50%;background:linear-gradient(120deg,#0f8a6f,#0a6b56);display:grid;place-items:center}
+  .success .ok svg{width:28px;height:28px;stroke:#fff;stroke-width:3;fill:none}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .success p{font-size:1.05rem}
+  .success p b{font-family:"Fraunces",serif;font-weight:500;font-size:1.25rem}
+  .success p small{color:var(--ink-soft);font-size:.92rem}
+
+  .btn{width:100%;border:none;border-radius:14px;padding:15px;font-family:inherit;font-size:1rem;font-weight:600;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:transform .15s,box-shadow .25s,background .2s;-webkit-tap-highlight-color:transparent}
+  .btn:active{transform:scale(.985)}
+  .btn-primary{background:var(--accent);color:#fff;box-shadow:0 8px 20px -6px rgba(15,138,111,.5)}
+  .btn-primary:hover{background:var(--accent-deep)}
+  .btn-ghost{background:#eef2f0;color:var(--ink)}
+  .btn-ghost:hover{background:#e4eae7}
+  .btn svg{width:19px;height:19px}
+  .relink{display:block;width:100%;text-align:center;background:none;border:none;color:var(--ink-soft);
+    font-family:inherit;font-size:.9rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+  .relink:hover{color:var(--ink)}
+
+  footer{text-align:center;color:var(--ink-soft);font-size:.8rem;opacity:0;animation:rise .7s .3s forwards;line-height:1.6}
+  footer .lock{display:inline-flex;align-items:center;gap:6px;color:var(--accent-deep);font-weight:600}
+  footer .lock svg{width:13px;height:13px}
+  .hidden{display:none!important}
+
+  /* MODAL */
+  .modal{position:fixed;inset:0;z-index:50;display:none}
+  .modal.open{display:block}
+  .modal-backdrop{position:absolute;inset:0;background:rgba(13,23,20,.55);backdrop-filter:blur(4px);animation:fade .25s ease}
+  .modal-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:calc(100% - 32px);max-width:480px;max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    background:var(--paper);border-radius:24px;box-shadow:var(--shadow);padding:22px;animation:pop .35s cubic-bezier(.2,.9,.25,1)}
+  @keyframes pop{from{opacity:0;transform:translate(-50%,-46%) scale(.96)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  .modal-close{position:absolute;top:14px;right:14px;width:34px;height:34px;border:none;border-radius:50%;
+    background:#eef2f0;color:var(--ink);font-size:20px;line-height:1;cursor:pointer;z-index:2;display:grid;place-items:center}
+  .modal-close:hover{background:#e4eae7}
+  .modal-head{display:flex;align-items:center;gap:13px;margin-bottom:18px;padding-right:34px}
+  .modal-head .ok{flex:0 0 42px;height:42px;border-radius:50%;background:linear-gradient(120deg,#0f8a6f,#0a6b56);display:grid;place-items:center}
+  .modal-head .ok svg{width:22px;height:22px;stroke:#fff;stroke-width:3;fill:none}
+  .modal-head h3{font-family:"Fraunces",serif;font-weight:500;font-size:1.4rem;line-height:1.1}
+  .modal-head p{color:var(--ink-soft);font-size:.88rem;margin-top:2px}
+
+  .img-box{border-radius:16px;overflow:hidden;border:1px solid var(--line);display:grid;place-items:center;margin-bottom:10px;
+    background-color:#f0f3f1;
+    background-image:linear-gradient(45deg,#e3e8e5 25%,transparent 25%),linear-gradient(-45deg,#e3e8e5 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e3e8e5 75%),linear-gradient(-45deg,transparent 75%,#e3e8e5 75%);
+    background-size:22px 22px;background-position:0 0,0 11px,11px -11px,-11px 0}
+  .img-box img{display:block;max-width:100%;max-height:46dvh;object-fit:contain}
+  .ios-hint{font-size:.8rem;color:var(--ink-soft);text-align:center;margin-bottom:16px;display:none;line-height:1.5}
+  .ios-hint.show{display:block}
+  .ios-hint b{color:var(--accent-deep)}
+
+  .m-sizes{display:flex;justify-content:center;gap:10px;align-items:center;font-size:.85rem;color:var(--ink-soft);
+    padding:10px;background:#f6f8f7;border:1px solid var(--line);border-radius:12px;margin-bottom:18px;flex-wrap:wrap}
+  .m-sizes b{color:var(--ink);font-weight:600}
+  .m-sizes .arrow{color:var(--accent-deep);font-weight:700}
+
+  .m-section-title{font-size:.78rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:11px}
+  .m-meta{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+  .m-row{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;border-radius:12px;background:#f6f8f7;border:1px solid var(--line)}
+  .m-row.warn{background:var(--warn-bg);border-color:#f3d3c9}
+  .m-row .ic{flex:0 0 32px;height:32px;border-radius:9px;background:#fff;display:grid;place-items:center;font-size:16px;border:1px solid var(--line)}
+  .m-row .tx{flex:1;min-width:0}
+  .m-row .tx .k{font-weight:600;font-size:.9rem;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .m-row .tx .v{font-size:.83rem;color:var(--ink-soft);word-break:break-word;text-decoration:line-through;text-decoration-color:#b9c6c0}
+  .m-row.warn .tx .v{color:var(--warn);text-decoration-color:#e0a392}
+  .pill{font-size:.66rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--accent-deep);
+    background:rgba(15,138,111,.12);padding:2px 7px;border-radius:100px}
+  .m-empty{padding:14px;text-align:center;color:var(--ink-soft);font-size:.9rem;background:#f6f8f7;border-radius:12px;border:1px solid var(--line);margin-bottom:20px}
+  .m-actions{display:flex;flex-direction:column;gap:10px}
+</style>
+</head>
+<body>
+<div class="mesh"></div>
+<div class="grain"></div>
+
+<div class="wrap">
+  <header>
+    <span class="badge"><span class="dot"></span>100% nel tuo browser</span>
+    <h1>Pulisci i tuoi <em>scatti</em></h1>
+    <p class="sub">Rimuovi posizione GPS, modello del telefono e ogni metadato nascosto. Niente lascia il tuo dispositivo.</p>
+  </header>
+
+  <div class="card">
+    <div class="drop" id="drop">
+      <div class="ring">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+        </svg>
+      </div>
+      <h2>Carica un'immagine</h2>
+      <p>Trascinala qui, oppure tocca per sceglierla</p>
+      <div class="hint"><span>JPG</span>·<span>PNG</span>·<span>WebP</span>·<span>HEIC*</span></div>
+      <input type="file" id="file" accept="image/*" class="hidden">
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="frame" id="frame">
+        <img id="preview" alt="anteprima">
+        <div class="statuschip" id="chip"><span class="spin"></span><span id="chiptx">Analisi…</span></div>
+      </div>
+      <div class="body">
+        <div class="success" id="success">
+          <div class="ok"><svg viewBox="0 0 24 24" style="stroke-dasharray:24;stroke-dashoffset:24;animation:draw .5s .1s forwards"><path d="M4 12l5 5L20 6"/></svg></div>
+          <p><b>Immagine ripulita</b><br><small id="sSub"></small></p>
+          <button class="btn btn-primary" id="openResult">Vedi risultato e scarica</button>
+          <button class="relink" id="reset">↺ Pulisci un'altra immagine</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="lock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      Elaborazione locale
+    </span><br>
+    Nessuna immagine viene caricata online. Puoi usarla anche offline.<br>
+    <small>*I file HEIC vengono convertiti in JPG durante la pulizia.</small>
+  </footer>
+</div>
+
+<!-- RESULT MODAL -->
+<div class="modal" id="modal" aria-hidden="true">
+  <div class="modal-backdrop" id="backdrop"></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button class="modal-close" id="mClose" aria-label="Chiudi">×</button>
+    <div class="modal-head">
+      <div class="ok"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>
+      <div><h3 id="mTitle">Immagine ripulita</h3><p id="mSub"></p></div>
+    </div>
+    <div class="img-box"><img id="mImg" alt="immagine pulita"></div>
+    <p class="ios-hint" id="iosHint">Per salvarla nelle Foto: <b>tieni premuto</b> sull'immagine → <b>Salva immagine</b>, oppure usa il pulsante qui sotto.</p>
+    <div class="m-sizes" id="mSizes"></div>
+    <div class="m-section-title">Metadati rimossi</div>
+    <div class="m-meta" id="mMeta"></div>
+    <div class="m-actions" id="mActions"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $=id=>document.getElementById(id);
+  const drop=$("drop"), fileInput=$("file"), stage=$("stage"), frame=$("frame"),
+        preview=$("preview"), chip=$("chip"), chiptx=$("chiptx"),
+        success=$("success"), sSub=$("sSub"), openResult=$("openResult"), reset=$("reset"),
+        modal=$("modal"), backdrop=$("backdrop"), mClose=$("mClose"),
+        mImg=$("mImg"), mSub=$("mSub"), mSizes=$("mSizes"), mMeta=$("mMeta"),
+        mActions=$("mActions"), iosHint=$("iosHint");
+
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+                (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+
+  let cleanedURL=null, cleanedFile=null, lastReport=null, lastSizes=null;
+
+  function fmtBytes(b){
+    if(b<1024) return b+" B";
+    if(b<1048576) return (b/1024).toFixed(1)+" KB";
+    return (b/1048576).toFixed(2)+" MB";
+  }
+  function ext(type){ if(type==="image/png")return "png"; if(type==="image/webp")return "webp"; return "jpg"; }
+
+  function parseTIFF(view, tiffStart){
+    const out={};
+    try{
+      const little = view.getUint16(tiffStart)===0x4949;
+      const u16=o=>view.getUint16(o,little), u32=o=>view.getUint32(o,little);
+      if(view.getUint16(tiffStart+2,little)!==0x002A) return out;
+      const TYPE_SIZE={1:1,2:1,3:2,4:4,5:8,7:1,9:4,10:8};
+      function readASCII(off,count){let s="";for(let i=0;i<count;i++){const c=view.getUint8(off+i);if(c===0)break;s+=String.fromCharCode(c);}return s.trim();}
+      function readRational(off){return u32(off)/u32(off+4);}
+      function readIFD(dirStart){
+        const entries=u16(dirStart); const tags={};
+        for(let i=0;i<entries;i++){
+          const e=dirStart+2+i*12, tag=u16(e), type=u16(e+2), count=u32(e+4);
+          const sz=(TYPE_SIZE[type]||1)*count; let valOff=e+8;
+          if(sz>4) valOff=tiffStart+u32(e+8);
+          tags[tag]={type,count,valOff};
+        }
+        return tags;
+      }
+      const ifd0=readIFD(tiffStart+u32(tiffStart+4));
+      if(ifd0[0x010F]) out.make=readASCII(ifd0[0x010F].valOff, ifd0[0x010F].count);
+      if(ifd0[0x0110]) out.model=readASCII(ifd0[0x0110].valOff, ifd0[0x0110].count);
+      if(ifd0[0x0132]) out.datetime=readASCII(ifd0[0x0132].valOff, ifd0[0x0132].count);
+      if(ifd0[0x0131]) out.software=readASCII(ifd0[0x0131].valOff, ifd0[0x0131].count);
+      if(ifd0[0x8769]){
+        const exif=readIFD(tiffStart+view.getUint32(ifd0[0x8769].valOff,little));
+        if(exif[0x9003]) out.dateOriginal=readASCII(exif[0x9003].valOff, exif[0x9003].count);
+      }
+      if(ifd0[0x8825]){
+        const gps=readIFD(tiffStart+view.getUint32(ifd0[0x8825].valOff,little));
+        function dms(t){const o=gps[t].valOff;return readRational(o)+readRational(o+8)/60+readRational(o+16)/3600;}
+        if(gps[0x0002]&&gps[0x0004]){
+          let lat=dms(0x0002), lon=dms(0x0004);
+          const latRef=gps[0x0001]?readASCII(gps[0x0001].valOff,gps[0x0001].count):"N";
+          const lonRef=gps[0x0003]?readASCII(gps[0x0003].valOff,gps[0x0003].count):"E";
+          if(latRef==="S")lat=-lat; if(lonRef==="W")lon=-lon;
+          out.gps={lat,lon};
+        }
+      }
+    }catch(e){}
+    return out;
+  }
+
+  function parseJPEG(buf){
+    const view=new DataView(buf), res={items:[],bytes:0,gps:null};
+    if(view.getUint16(0)!==0xFFD8) return null;
+    let off=2; const seen={xmp:false,icc:false,iptc:false,comment:false};
+    while(off<view.byteLength-1){
+      if(view.getUint8(off)!==0xFF){off++;continue;}
+      const marker=view.getUint16(off);
+      if(marker===0xFFDA) break;
+      if(marker>=0xFFD0 && marker<=0xFFD9){off+=2;continue;}
+      const len=view.getUint16(off+2), segStart=off+4;
+      if(marker===0xFFE1){
+        let hdr="";for(let i=0;i<6&&segStart+i<view.byteLength;i++)hdr+=String.fromCharCode(view.getUint8(segStart+i));
+        res.bytes+=len;
+        if(hdr.startsWith("Exif")){
+          const exif=parseTIFF(view, segStart+6);
+          if(exif.make||exif.model) res.items.push({ico:"📷",k:"Fotocamera / dispositivo",v:[exif.make,exif.model].filter(Boolean).join(" ")});
+          if(exif.dateOriginal||exif.datetime) res.items.push({ico:"📅",k:"Data e ora dello scatto",v:(exif.dateOriginal||exif.datetime)});
+          if(exif.software) res.items.push({ico:"🛠",k:"Software",v:exif.software});
+          if(exif.gps) res.gps=exif.gps;
+        }else seen.xmp=true;
+      }
+      else if(marker===0xFFE0) res.bytes+=len;
+      else if(marker===0xFFE2){res.bytes+=len;seen.icc=true;}
+      else if(marker===0xFFED){res.bytes+=len;seen.iptc=true;}
+      else if(marker>=0xFFE3&&marker<=0xFFEF){res.bytes+=len;seen.xmp=true;}
+      else if(marker===0xFFFE){res.bytes+=len;seen.comment=true;}
+      off+=2+len;
+    }
+    if(res.gps) res.items.unshift({warn:true,ico:"📍",k:"Posizione GPS",v:res.gps.lat.toFixed(5)+", "+res.gps.lon.toFixed(5)+"  ·  dove è stata scattata"});
+    const extras=[];
+    if(seen.icc)extras.push("profilo colore"); if(seen.iptc)extras.push("IPTC/Photoshop");
+    if(seen.xmp)extras.push("XMP"); if(seen.comment)extras.push("commenti");
+    if(extras.length)res.items.push({ico:"🗂",k:"Altri metadati incorporati",v:extras.join(", ")});
+    return res;
+  }
+
+  function parsePNG(buf){
+    const view=new DataView(buf), res={items:[],bytes:0,gps:null};
+    const sig=[137,80,78,71,13,10,26,10];
+    for(let i=0;i<8;i++) if(view.getUint8(i)!==sig[i]) return null;
+    let off=8; const txt=[];
+    while(off<view.byteLength){
+      const len=view.getUint32(off);
+      let type="";for(let i=0;i<4;i++)type+=String.fromCharCode(view.getUint8(off+4+i));
+      if(["tEXt","iTXt","zTXt"].includes(type)){res.bytes+=len;txt.push(type);}
+      else if(type==="eXIf"){res.bytes+=len;
+        const exif=parseTIFF(view, off+8);
+        if(exif.make||exif.model) res.items.push({ico:"📷",k:"Fotocamera / dispositivo",v:[exif.make,exif.model].filter(Boolean).join(" ")});
+        if(exif.dateOriginal||exif.datetime) res.items.push({ico:"📅",k:"Data e ora",v:(exif.dateOriginal||exif.datetime)});
+        if(exif.gps) res.gps=exif.gps;
+      }
+      else if(type==="tIME"){res.bytes+=len;res.items.push({ico:"📅",k:"Ultima modifica",v:"timestamp incorporato"});}
+      if(type==="IEND")break;
+      off+=12+len;
+    }
+    if(res.gps) res.items.unshift({warn:true,ico:"📍",k:"Posizione GPS",v:res.gps.lat.toFixed(5)+", "+res.gps.lon.toFixed(5)});
+    if(txt.length)res.items.push({ico:"🗂",k:"Testo incorporato",v:txt.length+" blocco/i ("+[...new Set(txt)].join(", ")+")"});
+    return res;
+  }
+
+  function analyze(buf,type){
+    try{
+      if(type==="image/jpeg") return parseJPEG(buf);
+      if(type==="image/png")  return parsePNG(buf);
+    }catch(e){}
+    return {items:[],bytes:0,gps:null,unknown:true};
+  }
+
+  async function cleanImage(file){
+    let bitmap;
+    try{ bitmap=await createImageBitmap(file,{imageOrientation:"from-image"}); }
+    catch(e){ bitmap=await createImageBitmap(file); }
+    const canvas=document.createElement("canvas");
+    canvas.width=bitmap.width; canvas.height=bitmap.height;
+    canvas.getContext("2d").drawImage(bitmap,0,0);
+    bitmap.close&&bitmap.close();
+    const outType=(file.type==="image/png"||file.type==="image/webp")?file.type:"image/jpeg";
+    const quality=outType==="image/jpeg"?0.92:undefined;
+    const blob=await new Promise(r=>canvas.toBlob(r,outType,quality));
+    return {blob,type:outType,w:canvas.width,h:canvas.height};
+  }
+  function renameClean(name,type){ return name.replace(/\.[^.]+$/,"")+"-pulita."+ext(type); }
+
+  async function handleFile(file){
+    if(!file||!file.type.startsWith("image/")) return;
+    drop.classList.add("hidden"); stage.classList.add("show");
+    success.style.visibility="hidden";
+    chip.classList.add("show"); chiptx.textContent="Analisi…"; frame.classList.add("scanning");
+
+    const url=URL.createObjectURL(file);
+    preview.src=url;
+
+    const buf=await file.arrayBuffer();
+    const report=analyze(buf,file.type);
+    await new Promise(r=>setTimeout(r,650));
+
+    chiptx.textContent="Rimozione metadati…";
+    let cleaned;
+    try{ cleaned=await cleanImage(file); }
+    catch(e){
+      frame.classList.remove("scanning"); chip.classList.remove("show");
+      success.style.visibility="visible";
+      sSub.textContent="Questo formato non è elaborabile in questo browser — prova con un JPG o PNG.";
+      openResult.classList.add("hidden");
+      return;
+    }
+    await new Promise(r=>setTimeout(r,400));
+    frame.classList.remove("scanning"); chip.classList.remove("show");
+
+    cleanedFile=new File([cleaned.blob], renameClean(file.name,cleaned.type), {type:cleaned.type});
+    if(cleanedURL)URL.revokeObjectURL(cleanedURL);
+    cleanedURL=URL.createObjectURL(cleaned.blob);
+    preview.src=cleanedURL;
+
+    lastReport=report;
+    lastSizes={orig:file.size, clean:cleaned.blob.size, w:cleaned.w, h:cleaned.h};
+
+    let sub;
+    if(report.gps) sub="Posizione GPS e tutti i metadati rimossi.";
+    else if(report.items.length) sub=report.items.length+" tipo/i di dato rimossi.";
+    else sub="Immagine riesportata senza alcun metadato.";
+    sSub.textContent=sub;
+    openResult.classList.remove("hidden");
+    success.style.visibility="visible";
+
+    URL.revokeObjectURL(url);
+    populateModal();
+    openModal();
+  }
+
+  function populateModal(){
+    mImg.src=cleanedURL;
+    if(lastReport && lastReport.gps) mSub.textContent="Posizione GPS e altri dati eliminati.";
+    else if(lastReport && lastReport.items.length) mSub.textContent="Dati nascosti eliminati con successo.";
+    else mSub.textContent="Riesportata senza alcun metadato.";
+
+    mSizes.innerHTML='<span>Originale <b>'+fmtBytes(lastSizes.orig)+'</b></span>'+
+      '<span class="arrow">→</span>'+
+      '<span>Pulita <b>'+fmtBytes(lastSizes.clean)+'</b> · '+lastSizes.w+'×'+lastSizes.h+'</span>';
+
+    mMeta.innerHTML="";
+    if(lastReport && lastReport.items.length){
+      lastReport.items.forEach(it=>{
+        const el=document.createElement("div");
+        el.className="m-row"+(it.warn?" warn":"");
+        el.innerHTML='<div class="ic">'+it.ico+'</div><div class="tx">'+
+          '<div class="k">'+it.k+'<span class="pill">rimosso</span></div>'+
+          '<div class="v">'+it.v+'</div></div>';
+        mMeta.appendChild(el);
+      });
+    }else{
+      const e=document.createElement("div"); e.className="m-empty";
+      e.textContent=(lastReport&&lastReport.unknown)
+        ? "Formato non analizzabile in dettaglio, ma l'immagine è stata comunque riesportata senza metadati."
+        : "Nessun metadato evidente era presente. L'immagine è stata comunque riesportata pulita.";
+      mMeta.appendChild(e);
+    }
+
+    mActions.innerHTML="";
+    const canShare = navigator.canShare && cleanedFile && navigator.canShare({files:[cleanedFile]});
+    const secure = window.isSecureContext;
+    if(isIOS){
+      iosHint.classList.add("show");
+      iosHint.innerHTML = secure
+        ? 'Per salvarla nelle Foto: <b>tieni premuto</b> sull\'immagine qui sopra → <b>Salva immagine</b>, oppure usa il pulsante qui sotto.'
+        : '⚠️ Il salvataggio con un tocco funziona solo aprendo questa pagina dal suo indirizzo <b>https://</b> (non dall\'anteprima o da un file locale). Per ora: <b>tieni premuto</b> sull\'immagine qui sopra → <b>Salva immagine</b>.';
+      if(canShare){
+        const b=document.createElement("button");
+        b.className="btn btn-primary"; b.innerHTML=iconShare()+"Salva / Condividi";
+        b.onclick=shareFile; mActions.appendChild(b);
+      }
+      const d=document.createElement("button");
+      d.className="btn "+(canShare?"btn-ghost":"btn-primary"); d.innerHTML=iconDl()+"Apri a schermo intero";
+      d.onclick=openFullscreen; mActions.appendChild(d);
+    }else{
+      iosHint.classList.remove("show");
+      const d=document.createElement("button");
+      d.className="btn btn-primary"; d.innerHTML=iconDl()+"Scarica immagine pulita";
+      d.onclick=downloadFile; mActions.appendChild(d);
+      if(canShare){
+        const s=document.createElement("button");
+        s.className="btn btn-ghost"; s.innerHTML=iconShare()+"Condividi";
+        s.onclick=shareFile; mActions.appendChild(s);
+      }
+    }
+  }
+  async function shareFile(){
+    try{ await navigator.share({files:[cleanedFile], title:cleanedFile.name}); }
+    catch(e){ if(e&&e.name!=="AbortError"){ isIOS?openFullscreen():downloadFile(); } }
+  }
+  function downloadFile(){
+    const a=document.createElement("a");
+    a.href=cleanedURL; a.download=cleanedFile.name;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  function openFullscreen(){ window.open(cleanedURL,"_blank"); }
+  function iconDl(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M12 16l-4-4M12 16l4-4"/><path d="M4 20h16"/></svg>';}
+  function iconShare(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v13M12 3l-4 4M12 3l4 4"/></svg>';}
+
+  function openModal(){ modal.classList.add("open"); modal.setAttribute("aria-hidden","false"); document.body.classList.add("lock"); }
+  function closeModal(){ modal.classList.remove("open"); modal.setAttribute("aria-hidden","true"); document.body.classList.remove("lock"); }
+
+  function doReset(){
+    closeModal();
+    stage.classList.remove("show"); drop.classList.remove("hidden");
+    fileInput.value=""; if(cleanedURL){URL.revokeObjectURL(cleanedURL);cleanedURL=null;}
+    cleanedFile=null; lastReport=null; lastSizes=null;
+  }
+
+  drop.addEventListener("click",()=>fileInput.click());
+  fileInput.addEventListener("change",e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+  reset.addEventListener("click",doReset);
+  openResult.addEventListener("click",openModal);
+  mClose.addEventListener("click",closeModal);
+  backdrop.addEventListener("click",closeModal);
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&modal.classList.contains("open")) closeModal(); });
+
+  ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
+  ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
+  drop.addEventListener("drop",e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+  window.addEventListener("paste",e=>{ const f=e.clipboardData&&e.clipboardData.files&&e.clipboardData.files[0]; if(f&&f.type.startsWith("image/")) handleFile(f); });
+})();
+</script>
+</body>
+</html>
