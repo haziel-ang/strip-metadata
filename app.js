@@ -106,7 +106,9 @@
       "ai.note":"<b>Limite importante:</b> questa analisi legge solo i <b>metadati</b> del file. I <b>watermark invisibili nei pixel</b> (es. Google <b>SynthID</b> di Gemini/Imagen) <b>non sono verificabili in questo browser</b>: serve il rilevatore ufficiale di Google. I metadati inoltre possono essere stati rimossi, quindi la loro assenza <b>non prova</b> che un'immagine non sia generata da AI.",
       "alt.preview":"anteprima","alt.result":"immagine pulita",
       "theme.system":"Sistema","theme.light":"Chiaro","theme.dark":"Scuro",
-      "ui.credit":"© 2026 <b>profxeni</b> · Licenza <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: puoi copiarla e modificarla citando l'autore."
+      "ui.credit":"© 2026 <b>profxeni</b> · Licenza <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: puoi copiarla e modificarla citando l'autore.",
+      "ui.whySafeTitle":"Perché è sicura?",
+      "ui.whySafe":"Gira nel browser, ma non carica niente. La pagina si scarica <b>una volta</b>; da lì la foto è elaborata <b>solo sul tuo dispositivo</b>, in memoria. Una regola di sicurezza (<code>connect-src 'none'</code>) blocca ogni richiesta di rete, quindi l'immagine non può uscire nemmeno per errore. Prova del nove: attiva la <b>modalità aereo</b> e funziona lo stesso."
     },
     en:{
       "ui.badge":"100% in your browser",
@@ -169,7 +171,9 @@
       "ai.note":"<b>Important limitation:</b> this analysis reads only the file's <b>metadata</b>. <b>Invisible pixel watermarks</b> (e.g. Google <b>SynthID</b> in Gemini/Imagen) <b>cannot be verified in this browser</b>: Google's official detector is required. Metadata may also have been stripped, so its absence <b>does not prove</b> an image is not AI-generated.",
       "alt.preview":"preview","alt.result":"clean image",
       "theme.system":"System","theme.light":"Light","theme.dark":"Dark",
-      "ui.credit":"© 2026 <b>profxeni</b> · Licensed <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: copy and remix it with attribution."
+      "ui.credit":"© 2026 <b>profxeni</b> · Licensed <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: copy and remix it with attribution.",
+      "ui.whySafeTitle":"Why is it safe?",
+      "ui.whySafe":"It runs in your browser, but nothing is uploaded. The page is downloaded <b>once</b>; from then on your photo is processed <b>only on your device</b>, in memory. A security rule (<code>connect-src 'none'</code>) blocks every network request, so the image can't leave, even by mistake. Proof: turn on <b>airplane mode</b> and it still works."
     }
   };
 

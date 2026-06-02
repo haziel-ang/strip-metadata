@@ -180,6 +180,17 @@
   footer .lock svg{width:13px;height:13px}
   footer a{color:var(--accent-deep);text-decoration:underline;text-underline-offset:2px}
   .credit{display:inline-block;margin-top:8px;opacity:.85}
+  .why{max-width:48ch;margin:10px auto 2px}
+  .why summary{cursor:pointer;list-style:none;display:block;text-align:center;
+    color:var(--accent-deep);font-weight:600;font-size:.8rem;transition:color .2s}
+  .why summary::-webkit-details-marker{display:none}
+  .why summary::after{content:" ▸";opacity:.7}
+  .why[open] summary::after{content:" ▾"}
+  .why summary:hover{color:var(--ink)}
+  .why p{font-size:.78rem;color:var(--ink-soft);line-height:1.55;margin-top:8px;text-align:left;
+    background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:11px 13px;animation:fade .3s ease}
+  .why code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;
+    background:var(--accent-soft);color:var(--accent-deep);padding:1px 5px;border-radius:5px}
   .hidden{display:none!important}
 
   /* MODAL */
@@ -312,7 +323,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
       <span data-i18n="ui.footerLock"></span>
     </span><br>
-    <span data-i18n="ui.footerOffline"></span><br>
+    <span data-i18n="ui.footerOffline"></span>
+    <details class="why">
+      <summary data-i18n="ui.whySafeTitle"></summary>
+      <p data-i18n-html="ui.whySafe"></p>
+    </details>
     <small data-i18n="ui.footerHeic"></small><br>
     <small data-i18n="ui.footerAi"></small><br>
     <small class="credit" data-i18n-html="ui.credit"></small>
