@@ -5,7 +5,7 @@
    Versione : 1.4.0
    Anno     : 2026
    Sviluppo : profxeni
-   Licenza  : uso personale
+   Licenza  : CC BY 4.0 — profxeni (copia e remix con citazione dell'autore)
 
    App 100% client-side: l'immagine non lascia mai il dispositivo.
    Sicurezza (riassunto in SECURITY.md):
@@ -178,6 +178,8 @@
   footer{text-align:center;color:var(--ink-soft);font-size:.8rem;opacity:0;animation:rise .7s .3s forwards;line-height:1.6}
   footer .lock{display:inline-flex;align-items:center;gap:6px;color:var(--accent-deep);font-weight:600}
   footer .lock svg{width:13px;height:13px}
+  footer a{color:var(--accent-deep);text-decoration:underline;text-underline-offset:2px}
+  .credit{display:inline-block;margin-top:8px;opacity:.85}
   .hidden{display:none!important}
 
   /* MODAL */
@@ -312,7 +314,8 @@
     </span><br>
     <span data-i18n="ui.footerOffline"></span><br>
     <small data-i18n="ui.footerHeic"></small><br>
-    <small data-i18n="ui.footerAi"></small>
+    <small data-i18n="ui.footerAi"></small><br>
+    <small class="credit" data-i18n-html="ui.credit"></small>
   </footer>
 </div>
 

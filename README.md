@@ -42,6 +42,11 @@ not prove an image is not AI-generated.
 See [`RESEARCH.md`](./RESEARCH.md) for the full research on AI image provenance,
 C2PA, IPTC, SynthID, and watermark robustness.
 
+## License
+
+© 2026 **profxeni** — licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/):
+you may copy and remix it, as long as you credit the author. See [`LICENSE`](./LICENSE).
+
 ## Ethics
 
 Stripping metadata has strong legitimate privacy uses (protecting GPS/home
