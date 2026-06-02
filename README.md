@@ -1,4 +1,4 @@
-# -strip-metadata
+# strip-metadata
 
 A lightweight, 100% client-side web app to analyze images, strip metadata, and
 export clean files. No image ever leaves your device.
