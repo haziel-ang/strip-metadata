@@ -48,7 +48,7 @@
     it:{
       "ui.badge":"100% nel tuo browser",
       "ui.h1":"Pulisci i tuoi <em>scatti</em>",
-      "ui.sub":"Un tocco cancella posizione GPS, dispositivo e ogni traccia nascosta dalle tue foto — e segnala se un'immagine ha origini AI. <b>Tutto sul tuo dispositivo. Niente viene mai caricato.</b>",
+      "ui.sub":"Le foto parlano. Questo le fa tacere: niente GPS, niente dispositivo, niente tag nascosti. <b>Resta tutto con te.</b>",
       "ui.dropTitle":"Carica un'immagine",
       "ui.dropDesc":"Trascinala qui, oppure tocca per sceglierla",
       "ui.choiceQ":"Cosa vuoi fare con questa immagine?",
@@ -110,7 +110,7 @@
     en:{
       "ui.badge":"100% in your browser",
       "ui.h1":"Clean your <em>shots</em>",
-      "ui.sub":"One tap wipes GPS location, device and every hidden trace from your photos — and flags whether an image is AI-made. <b>All on your device. Nothing is ever uploaded.</b>",
+      "ui.sub":"Photos talk. This makes them stop: no GPS, no device, no hidden tags. <b>Everything stays with you.</b>",
       "ui.dropTitle":"Upload an image",
       "ui.dropDesc":"Drag it here, or tap to choose",
       "ui.choiceQ":"What do you want to do with this image?",
@@ -187,8 +187,8 @@
   /* ====================== TEMA (sistema / chiaro / scuro) ====================== */
   const THEME_ICON={system:"🖥",light:"☀",dark:"🌙"};
   const THEME_ORDER=["system","light","dark"];
-  // Default: tema scuro (salvo scelta salvata dall'utente).
-  let THEME = readStore("theme") || "dark";
+  // Default: tema del dispositivo (sistema), salvo scelta salvata dall'utente.
+  let THEME = readStore("theme") || "system";
   function applyTheme(){
     const root=document.documentElement;
     if(THEME==="system"){ root.removeAttribute("data-theme"); root.style.colorScheme="light dark"; }
