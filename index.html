@@ -276,15 +276,32 @@
  */
 (function(){
   "use strict";
+
+  // SICUREZZA — Anti-clickjacking. La direttiva CSP `frame-ancestors` viene
+  // ignorata quando è in un <meta>, quindi impediamo qui che la pagina venga
+  // incorporata in un <iframe> da terzi (UI redress / clickjacking).
+  if(window.top!==window.self){
+    try{ document.documentElement.textContent=""; }catch(e){}
+    try{ window.top.location=window.self.location; }catch(e){}
+    return;
+  }
+
   const $=id=>document.getElementById(id);
 
   // Numero di versione, usato anche per eventuali log/diagnostica.
   const APP_VERSION="1.2.0";
 
-  // Limiti difensivi (anti-DoS in locale): file troppo grandi o stringhe di
-  // metadati abnormi vengono rifiutati/troncati invece di bloccare la pagina.
-  const MAX_FILE_BYTES=64*1024*1024;   // 64 MB
+  // Limiti difensivi (anti-DoS in locale): file troppo grandi, stringhe di
+  // metadati abnormi o immagini con dimensioni assurde vengono rifiutate/
+  // troncate invece di bloccare o saturare la pagina.
+  const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
   const MAX_META_CHARS=512;            // lunghezza massima mostrata per un valore
+  const MAX_SCAN_BYTES=2*1024*1024;    // byte di metadati analizzati per l'AI scan
+  const MAX_PIXELS=80*1000*1000;       // ~80 MP: guardia contro "decompression bomb"
+
+  // Tipi immagine accettati. Gli SVG sono esclusi: possono contenere script e
+  // non sono comunque immagini raster da ripulire.
+  function isAllowedType(t){ return /^image\//.test(t) && t!=="image/svg+xml"; }
 
   /* SICUREZZA — Escape dei caratteri HTML speciali. Da applicare a OGNI testo
      che deriva dal file dell'utente (EXIF Make/Model/Software/Data, ecc.)
@@ -437,7 +454,9 @@
      quelli serve il rilevatore ufficiale di Google. */
   function aiScan(buf,type){
     const view=new DataView(buf), bytes=[]; const flags={c2paBox:false};
-    function push(start,end){ for(let i=start;i<end&&i<view.byteLength;i++) bytes.push(view.getUint8(i)); }
+    // Non accumuliamo più di MAX_SCAN_BYTES: un file con segmenti di metadati
+    // enormi non deve poter saturare la memoria o bloccare l'analisi.
+    function push(start,end){ for(let i=start;i<end&&i<view.byteLength&&bytes.length<MAX_SCAN_BYTES;i++) bytes.push(view.getUint8(i)); }
     try{
       if(type==="image/jpeg"){
         let off=2;
@@ -548,6 +567,12 @@
     let bitmap;
     try{ bitmap=await createImageBitmap(file,{imageOrientation:"from-image"}); }
     catch(e){ bitmap=await createImageBitmap(file); }
+    // Guardia anti "decompression bomb": un file piccolo può decodificare in
+    // un'immagine enorme e saturare la memoria del canvas. Rifiutiamo sopra soglia.
+    if(bitmap.width*bitmap.height > MAX_PIXELS){
+      bitmap.close&&bitmap.close();
+      throw new Error("Immagine troppo grande in pixel");
+    }
     const canvas=document.createElement("canvas");
     canvas.width=bitmap.width; canvas.height=bitmap.height;
     canvas.getContext("2d").drawImage(bitmap,0,0);
@@ -562,8 +587,8 @@
   // Punto di ingresso: valida il file (tipo + dimensione), poi analizza i
   // metadati. La pulizia avviene solo su richiesta dell'utente (doClean).
   async function handleFile(file){
-    // SICUREZZA/robustezza: solo immagini, e rifiuta file troppo grandi.
-    if(!file || !/^image\//.test(file.type)) return;
+    // SICUREZZA/robustezza: solo immagini raster (no SVG), e niente file enormi.
+    if(!file || !isAllowedType(file.type)) return;
     if(file.size>MAX_FILE_BYTES){
       drop.classList.add("hidden"); stage.classList.add("show");
       frame.classList.remove("scanning"); chip.classList.remove("show");
@@ -603,7 +628,9 @@
     catch(e){
       frame.classList.remove("scanning"); chip.classList.remove("show");
       choice.style.visibility="visible";
-      choiceHint.textContent="Questo formato non è elaborabile in questo browser — prova con un JPG o PNG.";
+      choiceHint.textContent=/pixel/.test(e&&e.message)
+        ? "Immagine troppo grande da elaborare (oltre 80 megapixel)."
+        : "Questo formato non è elaborabile in questo browser — prova con un JPG o PNG.";
       return;
     }
     await new Promise(r=>setTimeout(r,400));
@@ -723,7 +750,7 @@
     document.body.appendChild(a); a.click(); a.remove();
   }
   // `noopener` impedisce alla nuova scheda di accedere a window.opener.
-  function openFullscreen(){ window.open(cleanedURL,"_blank","noopener"); }
+  function openFullscreen(){ window.open(cleanedURL,"_blank","noopener,noreferrer"); }
   function iconDl(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M12 16l-4-4M12 16l4-4"/><path d="M4 20h16"/></svg>';}
   function iconShare(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v13M12 3l-4 4M12 3l4 4"/></svg>';}
 
@@ -751,7 +778,7 @@
   ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
   ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
   drop.addEventListener("drop",e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
-  window.addEventListener("paste",e=>{ const f=e.clipboardData&&e.clipboardData.files&&e.clipboardData.files[0]; if(f&&f.type.startsWith("image/")) handleFile(f); });
+  window.addEventListener("paste",e=>{ const f=e.clipboardData&&e.clipboardData.files&&e.clipboardData.files[0]; if(f&&isAllowedType(f.type)) handleFile(f); });
 })();
 </script>
 </body>
