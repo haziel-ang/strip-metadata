@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.5.1
+ * @version 1.5.2
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.5.1";
+  const APP_VERSION="1.5.2";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -57,6 +57,8 @@
       "ui.footerOffline":"Nessuna immagine viene caricata online. Puoi usarla anche offline.",
       "ui.footerHeic":"*I file HEIC vengono convertiti in JPG durante la pulizia.",
       "ui.footerAi":"L'analisi AI legge solo i metadati: non rileva i watermark invisibili nei pixel (es. SynthID). Non usare questo strumento per spacciare contenuti AI come reali o per rimuovere l'attribuzione altrui.",
+      "ui.cleanedOne":"🧹 1 immagine ripulita su questo dispositivo",
+      "ui.cleanedMany":"🧹 {n} immagini ripulite su questo dispositivo",
       "btn.clean":"Pulisci i metadati","btn.analyze":"Analizza origine AI",
       "btn.download":"Scarica immagine pulita","btn.share":"Condividi",
       "btn.saveShare":"Salva / Condividi","btn.fullscreen":"Apri a schermo intero",
@@ -123,6 +125,8 @@
       "ui.footerOffline":"No image is uploaded online. You can use it offline too.",
       "ui.footerHeic":"*HEIC files are converted to JPG during cleaning.",
       "ui.footerAi":"The AI analysis reads metadata only: it does not detect invisible pixel watermarks (e.g. SynthID). Do not use this tool to pass AI content off as real or to strip someone else's attribution.",
+      "ui.cleanedOne":"🧹 1 image cleaned on this device",
+      "ui.cleanedMany":"🧹 {n} images cleaned on this device",
       "btn.clean":"Clean metadata","btn.analyze":"Analyze AI origin",
       "btn.download":"Download clean image","btn.share":"Share",
       "btn.saveShare":"Save / Share","btn.fullscreen":"Open fullscreen",
@@ -224,6 +228,7 @@
   function setLang(l){
     LANG=l; writeStore("lang",l);
     applyStaticI18n();
+    renderCount();
     // Aggiorna i contenuti dinamici già a schermo.
     if(stage.classList.contains("show")) setChoiceHint();
     if(modal.classList.contains("open")) populateModal();
@@ -239,7 +244,7 @@
         mAITitle=$("mAITitle"), mAIWrap=$("mAIWrap"),
         mMetaTitle=$("mMetaTitle"), mMeta=$("mMeta"),
         mActions=$("mActions"), iosHint=$("iosHint"),
-        langBtn=$("langBtn"), themeBtn=$("themeBtn");
+        langBtn=$("langBtn"), themeBtn=$("themeBtn"), statCleaned=$("statCleaned");
 
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
                 (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
@@ -253,6 +258,17 @@
     return (b/1048576).toFixed(2)+" MB";
   }
   function ext(type){ if(type==="image/png")return "png"; if(type==="image/webp")return "webp"; return "jpg"; }
+
+  /* Contatore LOCALE (solo localStorage, nessuna rete): quante immagini sono
+     state ripulite su QUESTO dispositivo. Rafforza la promessa privacy. */
+  const COUNT_KEY="nm_cleaned";
+  function getCount(){ const n=parseInt(readStore(COUNT_KEY)||"0",10); return isNaN(n)?0:n; }
+  function renderCount(){
+    const n=getCount();
+    if(n>0){ statCleaned.textContent=t(n===1?"ui.cleanedOne":"ui.cleanedMany",{n}); statCleaned.hidden=false; }
+    else statCleaned.hidden=true;
+  }
+  function incCount(){ writeStore(COUNT_KEY, String(getCount()+1)); renderCount(); }
 
   /* ====================== PARSING METADATI ====================== */
   // Legge la struttura TIFF/EXIF (Make, Model, Data, Software, GPS). Tutto è
@@ -603,6 +619,7 @@
     preview.src=cleanedURL;
     lastSizes={orig:currentFile.size, clean:cleaned.blob.size, w:cleaned.w, h:cleaned.h};
     choice.style.visibility="visible";
+    incCount();   // +1 immagine ripulita su questo dispositivo (solo locale)
 
     modalMode="clean";
     populateModal();
@@ -744,4 +761,5 @@
   /* ====================== AVVIO ====================== */
   applyTheme();
   applyStaticI18n();
+  renderCount();
 })();
