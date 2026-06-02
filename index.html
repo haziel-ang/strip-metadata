@@ -1,13 +1,38 @@
 <!DOCTYPE html>
+<!--
+  ============================================================================
+   Pulisci — Rimozione metadati & analisi origine AI
+   Versione : 1.2.0
+   Anno     : 2026
+   Sviluppo : profxeni
+   Licenza  : uso personale
+
+   App 100% client-side: l'immagine non lascia mai il dispositivo.
+   Sicurezza: Content-Security-Policy restrittiva (vedi <meta> sotto),
+   nessuna richiesta di rete in JavaScript, escape di tutti i metadati
+   non fidati prima dell'inserimento nel DOM.
+  ============================================================================
+-->
 <html lang="it" style="background:#eef1ef!important;color:#16221d!important;color-scheme:light only!important;">
 <head>
 <meta charset="UTF-8">
+<!-- HARDENING: CSP restrittiva. `connect-src 'none'` impedisce qualsiasi
+     esfiltrazione di rete (fetch/XHR/beacon). Font e immagini solo locali:
+     nessun dominio esterno è ammesso → app totalmente isolata. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<!-- HARDENING: non inviare l'header Referer ad alcuna origine esterna. -->
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light only">
 <title>Pulisci — rimuovi i metadati dalle immagini</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Font incorporati in locale (cartella fonts/): nessuna chiamata a Google.
+     L'app è quindi completamente offline e non comunica con l'esterno. -->
+<style>
+  /* Font variabili self-hosted (subset latin, sufficiente per l'italiano). */
+  @font-face{font-family:"Fraunces";font-style:normal;font-weight:400 600;font-display:swap;src:url("fonts/fraunces.woff2") format("woff2")}
+  @font-face{font-family:"Fraunces";font-style:italic;font-weight:400 600;font-display:swap;src:url("fonts/fraunces-italic.woff2") format("woff2")}
+  @font-face{font-family:"Hanken Grotesk";font-style:normal;font-weight:400 700;font-display:swap;src:url("fonts/hanken-grotesk.woff2") format("woff2")}
+</style>
 <style>
   :root{
     --bg:#eef1ef;--ink:#16221d;--ink-soft:#5a6661;--paper:#ffffff;
@@ -239,9 +264,35 @@
 </div>
 
 <script>
+/*!
+ * Pulisci — Rimozione metadati & analisi origine AI
+ * @version 1.2.0
+ * @year    2026
+ * @author  profxeni
+ *
+ * Tutta l'elaborazione avviene nel browser: nessun upload, nessuna chiamata di
+ * rete. I valori dei metadati provengono da file non fidati e vengono sempre
+ * "escapati" (funzione esc) prima di finire nel DOM, per evitare XSS.
+ */
 (function(){
   "use strict";
   const $=id=>document.getElementById(id);
+
+  // Numero di versione, usato anche per eventuali log/diagnostica.
+  const APP_VERSION="1.2.0";
+
+  // Limiti difensivi (anti-DoS in locale): file troppo grandi o stringhe di
+  // metadati abnormi vengono rifiutati/troncati invece di bloccare la pagina.
+  const MAX_FILE_BYTES=64*1024*1024;   // 64 MB
+  const MAX_META_CHARS=512;            // lunghezza massima mostrata per un valore
+
+  /* SICUREZZA — Escape dei caratteri HTML speciali. Da applicare a OGNI testo
+     che deriva dal file dell'utente (EXIF Make/Model/Software/Data, ecc.)
+     prima di inserirlo via innerHTML. Tronca anche valori troppo lunghi. */
+  function esc(s){
+    s=String(s==null?"":s).slice(0,MAX_META_CHARS);
+    return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
   const drop=$("drop"), fileInput=$("file"), stage=$("stage"), frame=$("frame"),
         preview=$("preview"), chip=$("chip"), chiptx=$("chiptx"),
         choice=$("choice"), actClean=$("actClean"), actAnalyze=$("actAnalyze"),
@@ -265,14 +316,17 @@
   }
   function ext(type){ if(type==="image/png")return "png"; if(type==="image/webp")return "webp"; return "jpg"; }
 
+  // Legge la struttura TIFF/EXIF (Make, Model, Data, Software, GPS). Tutto è
+  // racchiuso in try/catch: un header malformato non deve far crashare l'app.
   function parseTIFF(view, tiffStart){
     const out={};
     try{
-      const little = view.getUint16(tiffStart)===0x4949;
+      const little = view.getUint16(tiffStart)===0x4949;   // 0x4949='II' little-endian
       const u16=o=>view.getUint16(o,little), u32=o=>view.getUint32(o,little);
       if(view.getUint16(tiffStart+2,little)!==0x002A) return out;
       const TYPE_SIZE={1:1,2:1,3:2,4:4,5:8,7:1,9:4,10:8};
-      function readASCII(off,count){let s="";for(let i=0;i<count;i++){const c=view.getUint8(off+i);if(c===0)break;s+=String.fromCharCode(c);}return s.trim();}
+      // `count` arriva dal file: lo limitiamo (anti-DoS) per non leggere stringhe enormi.
+      function readASCII(off,count){count=Math.min(count,MAX_META_CHARS);let s="";for(let i=0;i<count;i++){const c=view.getUint8(off+i);if(c===0)break;s+=String.fromCharCode(c);}return s.trim();}
       function readRational(off){return u32(off)/u32(off+4);}
       function readIFD(dirStart){
         const entries=u16(dirStart); const tags={};
@@ -474,9 +528,10 @@
       const list=document.createElement("div"); list.className="ai-list";
       ai.signals.forEach(s=>{
         const el=document.createElement("div"); el.className="m-row"+(s.strong?" warn":"");
-        el.innerHTML='<div class="ic">'+s.ico+'</div><div class="tx">'+
-          '<div class="k">'+s.k+'<span class="pill '+(s.strong?'':'ai')+'">'+(s.strong?'AI':'indizio')+'</span></div>'+
-          '<div class="v" style="text-decoration:none">'+s.v+'</div></div>';
+        // I label qui sono costanti interne, ma applichiamo esc() per difesa in profondità.
+        el.innerHTML='<div class="ic">'+esc(s.ico)+'</div><div class="tx">'+
+          '<div class="k">'+esc(s.k)+'<span class="pill '+(s.strong?'':'ai')+'">'+(s.strong?'AI':'indizio')+'</span></div>'+
+          '<div class="v" style="text-decoration:none">'+esc(s.v)+'</div></div>';
         list.appendChild(el);
       });
       mAIWrap.appendChild(list);
@@ -487,6 +542,9 @@
   }
 
   async function cleanImage(file){
+    // Disegna i soli pixel su <canvas> e li ricodifica: il file in uscita non
+    // contiene metadati (EXIF/XMP/IPTC/ICC/C2PA). NB: eventuali watermark nei
+    // pixel (es. SynthID) NON vengono rimossi, perché vivono nei pixel stessi.
     let bitmap;
     try{ bitmap=await createImageBitmap(file,{imageOrientation:"from-image"}); }
     catch(e){ bitmap=await createImageBitmap(file); }
@@ -501,8 +559,18 @@
   }
   function renameClean(name,type){ return name.replace(/\.[^.]+$/,"")+"-pulita."+ext(type); }
 
+  // Punto di ingresso: valida il file (tipo + dimensione), poi analizza i
+  // metadati. La pulizia avviene solo su richiesta dell'utente (doClean).
   async function handleFile(file){
-    if(!file||!file.type.startsWith("image/")) return;
+    // SICUREZZA/robustezza: solo immagini, e rifiuta file troppo grandi.
+    if(!file || !/^image\//.test(file.type)) return;
+    if(file.size>MAX_FILE_BYTES){
+      drop.classList.add("hidden"); stage.classList.add("show");
+      frame.classList.remove("scanning"); chip.classList.remove("show");
+      choice.style.visibility="visible";
+      choiceHint.textContent="File troppo grande (max "+(MAX_FILE_BYTES/1048576)+" MB).";
+      return;
+    }
     drop.classList.add("hidden"); stage.classList.add("show");
     choice.style.visibility="hidden";
     chip.classList.add("show"); chiptx.textContent="Analisi…"; frame.classList.add("scanning");
@@ -589,9 +657,10 @@
         const el=document.createElement("div");
         el.className="m-row"+(it.warn?" warn":"");
         const pill = analyzeOnly ? "" : '<span class="pill">rimosso</span>';
-        el.innerHTML='<div class="ic">'+it.ico+'</div><div class="tx">'+
-          '<div class="k">'+it.k+pill+'</div>'+
-          '<div class="v"'+(analyzeOnly?' style="text-decoration:none"':'')+'>'+it.v+'</div></div>';
+        // esc(): it.v può contenere stringhe arbitrarie lette dall'EXIF → XSS.
+        el.innerHTML='<div class="ic">'+esc(it.ico)+'</div><div class="tx">'+
+          '<div class="k">'+esc(it.k)+pill+'</div>'+
+          '<div class="v"'+(analyzeOnly?' style="text-decoration:none"':'')+'>'+esc(it.v)+'</div></div>';
         mMeta.appendChild(el);
       });
     }else{
@@ -653,7 +722,8 @@
     a.href=cleanedURL; a.download=cleanedFile.name;
     document.body.appendChild(a); a.click(); a.remove();
   }
-  function openFullscreen(){ window.open(cleanedURL,"_blank"); }
+  // `noopener` impedisce alla nuova scheda di accedere a window.opener.
+  function openFullscreen(){ window.open(cleanedURL,"_blank","noopener"); }
   function iconDl(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M12 16l-4-4M12 16l4-4"/><path d="M4 20h16"/></svg>';}
   function iconShare(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v13M12 3l-4 4M12 3l4 4"/></svg>';}
 
