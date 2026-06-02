@@ -3,6 +3,23 @@
 A lightweight, 100% client-side web app to analyze images, strip metadata, and
 export clean files. No image ever leaves your device.
 
+## Struttura
+
+- `index.html` — markup + CSS (font incorporati in base64) e i controlli lingua/tema.
+- `app.js` — tutta la logica (separata dall'HTML per una CSP più stretta).
+- `SECURITY.md` — sintesi dell'hardening: ogni misura e *cosa evita*.
+- `RESEARCH.md` — ricerca su provenienza AI, C2PA, IPTC, SynthID.
+
+> Apertura locale: per via della CSP (`script-src 'self'`), apri tramite un piccolo
+> server (`python3 -m http.server`) anziché con doppio clic su `file://`. Su GitHub
+> Pages funziona direttamente.
+
+## Lingua e tema
+
+- **Doppia lingua IT/EN** con selettore in alto a destra (rilevamento automatico
+  dalla lingua del browser, scelta salvata in `localStorage`).
+- **Tema** Sistema / Chiaro / Scuro (di default segue il dispositivo).
+
 ## Features
 
 - **Pulisci i metadati** — re-encodes the image via `<canvas>` to remove EXIF
