@@ -122,7 +122,10 @@
   .card{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
     overflow:hidden;opacity:0;animation:rise .7s .18s cubic-bezier(.2,.8,.2,1) forwards}
   .card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;z-index:1;
-    background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.75}
+    background:linear-gradient(90deg,transparent 0%,var(--accent) 50%,transparent 100%);
+    background-size:250% 100%;background-repeat:no-repeat;opacity:.85;
+    animation:barflow 7s ease-in-out infinite alternate}
+  @keyframes barflow{from{background-position:0% 0}to{background-position:100% 0}}
   @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 
   .drop{padding:38px 26px;text-align:center;cursor:pointer;position:relative;transition:background .25s}
