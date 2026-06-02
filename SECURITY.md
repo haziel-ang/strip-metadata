@@ -12,7 +12,7 @@ né telemetria. Di seguito **ogni misura di sicurezza e cosa serve a evitare**.
 | 3 | **CSP `connect-src 'none'`** | `index.html` (meta) | **Esfiltrazione dei dati**: nessun `fetch`/XHR/`sendBeacon`/WebSocket può uscire dal dispositivo |
 | 4 | **CSP `default-src 'none'`, `img-src 'self' data: blob:`, `font-src data:`, `style-src 'self' 'unsafe-inline'`** | `index.html` (meta) | **Caricamento di risorse esterne non previste**: nessun dominio di terze parti, niente tracker, nessun font remoto |
 | 5 | **`base-uri 'none'`, `form-action 'none'`** | `index.html` (meta) | **Dirottamento via `<base>` e invio di form** verso destinazioni arbitrarie |
-| 6 | **Anti-clickjacking**: header `X-Frame-Options: DENY` + `frame-ancestors 'none'` (`_headers`/`vercel.json`) **+ frame-buster JS** di riserva | `_headers`, `vercel.json`, `app.js` | **Clickjacking / UI redress**: la pagina non è utilizzabile dentro un `<iframe>` di terzi (`frame-ancestors` nel `<meta>` è ignorato dai browser, perciò sta negli header) |
+| 6 | **Anti-clickjacking**: **frame-buster JS** (e, se il sito è servito dietro Cloudflare con proxy attivo, una regola header `X-Frame-Options: DENY` / `frame-ancestors`) | `app.js` (+ Cloudflare) | **Clickjacking / UI redress**: la pagina non è utilizzabile dentro un `<iframe>` di terzi (`frame-ancestors` nel `<meta>` è ignorato dai browser, perciò va in un header lato CDN) |
 | 7 | **`referrer: no-referrer`** | `index.html` (meta) | **Leak dell'URL** come header `Referer` verso origini esterne |
 | 8 | **`window.open(..., "noopener,noreferrer")`** | `app.js` | **Tabnabbing**: la nuova scheda non può accedere a `window.opener` |
 | 9 | **Allowlist tipi (`isAllowedType`)**: solo immagini raster, **SVG escluso** | `app.js` | **Payload attivi**: gli SVG possono contenere script; vengono rifiutati |
@@ -29,8 +29,9 @@ né telemetria. Di seguito **ogni misura di sicurezza e cosa serve a evitare**.
   (`style-src 'unsafe-inline'`). È un rischio molto inferiore rispetto agli script;
   i valori di stile non derivano da input utente.
 - **Header HTTP** (`X-Frame-Options`, `X-Content-Type-Options`, `Permissions-Policy`,
-  HSTS): non impostabili via `<meta>`. Vanno aggiunti dall'hosting. Se userai un host
-  che lo consente (es. Netlify/Cloudflare `_headers`), si possono completare lì.
+  HSTS): non impostabili via `<meta>` e **non configurabili su GitHub Pages**. Per
+  averli, servire il sito dietro un CDN che li inietta (es. **Cloudflare con proxy
+  attivo** → Rules / Transform Rules → Response Headers).
 
 ## Nota su apertura locale (`file://`)
 
