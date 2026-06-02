@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.3.0
+ * @version 1.4.0
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.3.0";
+  const APP_VERSION="1.4.0";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -48,7 +48,7 @@
     it:{
       "ui.badge":"100% nel tuo browser",
       "ui.h1":"Pulisci i tuoi <em>scatti</em>",
-      "ui.sub":"Rimuovi posizione GPS, modello del telefono e ogni metadato nascosto — oppure analizza l'origine AI dell'immagine. Niente lascia il tuo dispositivo.",
+      "ui.sub":"Un tocco cancella posizione GPS, dispositivo e ogni traccia nascosta dalle tue foto — e segnala se un'immagine ha origini AI. <b>Tutto sul tuo dispositivo. Niente viene mai caricato.</b>",
       "ui.dropTitle":"Carica un'immagine",
       "ui.dropDesc":"Trascinala qui, oppure tocca per sceglierla",
       "ui.choiceQ":"Cosa vuoi fare con questa immagine?",
@@ -110,7 +110,7 @@
     en:{
       "ui.badge":"100% in your browser",
       "ui.h1":"Clean your <em>shots</em>",
-      "ui.sub":"Remove GPS location, phone model and every hidden metadata — or analyze the image's AI origin. Nothing leaves your device.",
+      "ui.sub":"One tap wipes GPS location, device and every hidden trace from your photos — and flags whether an image is AI-made. <b>All on your device. Nothing is ever uploaded.</b>",
       "ui.dropTitle":"Upload an image",
       "ui.dropDesc":"Drag it here, or tap to choose",
       "ui.choiceQ":"What do you want to do with this image?",
@@ -174,7 +174,8 @@
   function readStore(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
   function writeStore(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 
-  let LANG = readStore("lang") || ((navigator.language||"").toLowerCase().indexOf("it")===0 ? "it" : "en");
+  // Default: inglese (salvo scelta salvata dall'utente).
+  let LANG = readStore("lang") || "en";
   // t(key, params): traduce e sostituisce eventuali segnaposto {x}.
   function t(key,params){
     const dict=I18N[LANG]||I18N.it;
@@ -186,7 +187,8 @@
   /* ====================== TEMA (sistema / chiaro / scuro) ====================== */
   const THEME_ICON={system:"🖥",light:"☀",dark:"🌙"};
   const THEME_ORDER=["system","light","dark"];
-  let THEME = readStore("theme") || "system";
+  // Default: tema scuro (salvo scelta salvata dall'utente).
+  let THEME = readStore("theme") || "dark";
   function applyTheme(){
     const root=document.documentElement;
     if(THEME==="system"){ root.removeAttribute("data-theme"); root.style.colorScheme="light dark"; }
