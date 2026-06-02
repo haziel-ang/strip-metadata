@@ -3,6 +3,25 @@
 A lightweight, 100% client-side web app to analyze images, strip metadata, and
 export clean files. No image ever leaves your device.
 
+## Why it's safe even though it runs in a browser
+
+**EN —** A web page is just code your browser downloads **once**. From that
+moment your photo is processed **entirely on your device**, in memory, using the
+browser's built-in tools (Canvas). It is never sent anywhere. This isn't only a
+promise: a strict security policy (`Content-Security-Policy: connect-src 'none'`)
+**technically blocks the page from making any network request**, so it *cannot*
+upload your image even if it wanted to. Proof: switch on airplane mode and it
+still works; or open DevTools → Network and you'll see zero uploads.
+
+**IT —** Una pagina web è solo codice che il browser scarica **una volta**. Da
+quel momento la tua foto viene elaborata **interamente sul tuo dispositivo**, in
+memoria, con gli strumenti integrati del browser (Canvas), e non viene mai
+inviata. Non è solo una promessa: una policy di sicurezza rigida
+(`Content-Security-Policy: connect-src 'none'`) **impedisce tecnicamente alla
+pagina qualsiasi richiesta di rete**, quindi *non può* caricare la tua immagine
+nemmeno volendo. Prova del nove: attiva la modalità aereo e funziona lo stesso;
+oppure apri DevTools → Network e vedrai zero upload.
+
 ## Struttura
 
 - `index.html` — markup + CSS (font incorporati in base64) e i controlli lingua/tema.
