@@ -1,0 +1,14 @@
+# Cloudflare Pages — header HTTP (sicurezza + cache)
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'none'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src data:; script-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+
+# HTML e JS sempre rivalidati, così un nuovo deploy si vede subito.
+/index.html
+  Cache-Control: no-cache
+/app.js
+  Cache-Control: no-cache
