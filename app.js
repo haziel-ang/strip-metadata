@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.5.4
+ * @version 1.6.0
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.5.4";
+  const APP_VERSION="1.6.0";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -59,6 +59,10 @@
       "ui.footerAi":"L'analisi AI legge solo i metadati: non rileva i watermark invisibili nei pixel (es. SynthID). Non usare questo strumento per spacciare contenuti AI come reali o per rimuovere l'attribuzione altrui.",
       "ui.cleanedOne":"🧹 1 immagine ripulita su questo dispositivo",
       "ui.cleanedMany":"🧹 {n} immagini ripulite su questo dispositivo",
+      "geo.viewMap":"Mappa","geo.title":"Posizione GPS",
+      "geo.openOSM":"Apri in OpenStreetMap","geo.openGoogle":"Apri in Google Maps",
+      "geo.copy":"Copia coordinate","geo.copied":"Copiato ✓",
+      "geo.note":"Il pulsante apre una mappa esterna in una nuova scheda: la posizione verrà condivisa con quel servizio. La pagina, di per sé, non invia nulla.",
       "btn.clean":"Pulisci i metadati","btn.analyze":"Analizza immagine",
       "btn.download":"Scarica immagine pulita","btn.share":"Condividi",
       "btn.saveShare":"Salva / Condividi","btn.fullscreen":"Apri a schermo intero",
@@ -127,6 +131,10 @@
       "ui.footerAi":"The AI analysis reads metadata only: it does not detect invisible pixel watermarks (e.g. SynthID). Do not use this tool to pass AI content off as real or to strip someone else's attribution.",
       "ui.cleanedOne":"🧹 1 image cleaned on this device",
       "ui.cleanedMany":"🧹 {n} images cleaned on this device",
+      "geo.viewMap":"Map","geo.title":"GPS location",
+      "geo.openOSM":"Open in OpenStreetMap","geo.openGoogle":"Open in Google Maps",
+      "geo.copy":"Copy coordinates","geo.copied":"Copied ✓",
+      "geo.note":"The button opens an external map in a new tab: the location will be shared with that service. The page itself sends nothing.",
       "btn.clean":"Clean metadata","btn.analyze":"Analyze image",
       "btn.download":"Download clean image","btn.share":"Share",
       "btn.saveShare":"Save / Share","btn.fullscreen":"Open fullscreen",
@@ -244,7 +252,9 @@
         mAITitle=$("mAITitle"), mAIWrap=$("mAIWrap"),
         mMetaTitle=$("mMetaTitle"), mMeta=$("mMeta"),
         mActions=$("mActions"), iosHint=$("iosHint"),
-        langBtn=$("langBtn"), themeBtn=$("themeBtn"), statCleaned=$("statCleaned");
+        langBtn=$("langBtn"), themeBtn=$("themeBtn"), statCleaned=$("statCleaned"),
+        geoModal=$("geoModal"), geoBackdrop=$("geoBackdrop"), geoClose=$("geoClose"),
+        geoTitle=$("geoTitle"), geoCoords=$("geoCoords"), geoActions=$("geoActions"), geoNote=$("geoNote");
 
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
                 (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
@@ -667,6 +677,15 @@
         el.innerHTML='<div class="ic">'+esc(it.ico)+'</div><div class="tx">'+
           '<div class="k">'+esc(t(it.kKey))+pill+'</div>'+
           '<div class="v"'+(analyzeOnly?' style="text-decoration:none"':'')+'>'+esc(itemValue(it))+'</div></div>';
+        // La riga GPS è cliccabile e apre il popup mappa.
+        if(it.kKey==="meta.gps" && lastReport.gps){
+          el.classList.add("geo-row"); el.setAttribute("role","button"); el.tabIndex=0;
+          const k=el.querySelector(".k");
+          if(k){ const m=document.createElement("span"); m.className="maplink"; m.textContent="🗺 "+t("geo.viewMap"); k.appendChild(m); }
+          const go=()=>openGeo(lastReport.gps.lat, lastReport.gps.lon);
+          el.addEventListener("click",go);
+          el.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
+        }
         mMeta.appendChild(el);
       });
     }else{
@@ -732,6 +751,31 @@
   function openModal(){ modal.classList.add("open"); modal.setAttribute("aria-hidden","false"); document.body.classList.add("lock"); }
   function closeModal(){ modal.classList.remove("open"); modal.setAttribute("aria-hidden","true"); document.body.classList.remove("lock"); }
 
+  /* Popup mappa GPS: mostra le coordinate e offre l'apertura di una mappa
+     ESTERNA in una nuova scheda (solo su clic). La pagina non fa richieste. */
+  function openGeo(lat,lon){
+    const c=lat.toFixed(6)+", "+lon.toFixed(6);
+    geoTitle.textContent=t("geo.title");
+    geoCoords.textContent=c;
+    geoNote.textContent=t("geo.note");
+    geoActions.innerHTML="";
+    function linkBtn(cls,label,url){
+      const b=document.createElement("button"); b.className="btn "+cls;
+      b.textContent=label;
+      b.onclick=()=>window.open(url,"_blank","noopener,noreferrer");
+      geoActions.appendChild(b);
+    }
+    linkBtn("btn-primary", t("geo.openOSM"),
+      "https://www.openstreetmap.org/?mlat="+lat+"&mlon="+lon+"#map=15/"+lat+"/"+lon);
+    linkBtn("btn-outline", t("geo.openGoogle"),
+      "https://www.google.com/maps?q="+lat+","+lon);
+    const cp=document.createElement("button"); cp.className="btn btn-ghost"; cp.textContent=t("geo.copy");
+    cp.onclick=()=>{ try{ navigator.clipboard && navigator.clipboard.writeText(c); cp.textContent=t("geo.copied"); }catch(e){} };
+    geoActions.appendChild(cp);
+    geoModal.classList.add("open"); geoModal.setAttribute("aria-hidden","false"); document.body.classList.add("lock");
+  }
+  function closeGeo(){ geoModal.classList.remove("open"); geoModal.setAttribute("aria-hidden","true"); if(!modal.classList.contains("open")) document.body.classList.remove("lock"); }
+
   function doReset(){
     closeModal();
     stage.classList.remove("show"); drop.classList.remove("hidden");
@@ -749,7 +793,13 @@
   actAnalyze.addEventListener("click",showAnalysis);
   mClose.addEventListener("click",closeModal);
   backdrop.addEventListener("click",closeModal);
-  document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&modal.classList.contains("open")) closeModal(); });
+  geoClose.addEventListener("click",closeGeo);
+  geoBackdrop.addEventListener("click",closeGeo);
+  document.addEventListener("keydown",e=>{
+    if(e.key!=="Escape") return;
+    if(geoModal.classList.contains("open")) closeGeo();
+    else if(modal.classList.contains("open")) closeModal();
+  });
   langBtn.addEventListener("click",()=>setLang(LANG==="it"?"en":"it"));
   themeBtn.addEventListener("click",cycleTheme);
 

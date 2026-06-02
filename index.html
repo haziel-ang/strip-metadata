@@ -2,7 +2,7 @@
 <!--
   ============================================================================
    Pulisci — Rimozione metadati & analisi origine AI
-   Versione : 1.5.4
+   Versione : 1.6.0
    Anno     : 2026
    Sviluppo : profxeni
    Licenza  : CC BY 4.0 — profxeni (copia e remix con citazione dell'autore)
@@ -214,6 +214,17 @@
   .stat{display:inline-block;margin:0 auto 12px;font-size:.82rem;font-weight:600;color:var(--accent-deep);
     background:var(--accent-soft);padding:5px 13px;border-radius:100px}
   .stat[hidden]{display:none}
+  /* GPS: riga cliccabile + popup mappa */
+  .m-row.geo-row{cursor:pointer;transition:border-color .2s,background .2s}
+  .m-row.geo-row:hover{border-color:var(--accent)}
+  .maplink{font-size:.66rem;font-weight:700;letter-spacing:.02em;color:var(--accent-deep);
+    background:var(--accent-soft);padding:2px 8px;border-radius:100px}
+  #geoModal{z-index:70}
+  .geo-card{max-width:420px}
+  .geo-pin{font-size:22px;background:var(--accent-soft)!important}
+  #geoCoords{font-variant-numeric:tabular-nums}
+  .geo-note{font-size:.76rem;color:var(--ink-soft);line-height:1.5;margin-top:14px;
+    background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:10px 12px}
   .why{max-width:48ch;margin:10px auto 2px}
   .why summary{cursor:pointer;list-style:none;display:block;text-align:center;
     color:var(--accent-deep);font-weight:600;font-size:.8rem;transition:color .2s}
@@ -393,6 +404,20 @@
   </div>
 </div>
 
-<script src="app.js?v=1.5.4" defer></script>
+<!-- GPS MAP POPUP -->
+<div class="modal" id="geoModal" aria-hidden="true">
+  <div class="modal-backdrop" id="geoBackdrop"></div>
+  <div class="modal-card geo-card" role="dialog" aria-modal="true" aria-labelledby="geoTitle">
+    <button class="modal-close" id="geoClose" aria-label="Chiudi">×</button>
+    <div class="modal-head">
+      <div class="ok geo-pin">📍</div>
+      <div><h3 id="geoTitle"></h3><p id="geoCoords"></p></div>
+    </div>
+    <div class="m-actions" id="geoActions"></div>
+    <p class="geo-note" id="geoNote"></p>
+  </div>
+</div>
+
+<script src="app.js?v=1.6.0" defer></script>
 </body>
 </html>
