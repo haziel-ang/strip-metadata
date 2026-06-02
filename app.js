@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.5.3
+ * @version 1.5.4
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.5.3";
+  const APP_VERSION="1.5.4";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -59,7 +59,7 @@
       "ui.footerAi":"L'analisi AI legge solo i metadati: non rileva i watermark invisibili nei pixel (es. SynthID). Non usare questo strumento per spacciare contenuti AI come reali o per rimuovere l'attribuzione altrui.",
       "ui.cleanedOne":"🧹 1 immagine ripulita su questo dispositivo",
       "ui.cleanedMany":"🧹 {n} immagini ripulite su questo dispositivo",
-      "btn.clean":"Pulisci i metadati","btn.analyze":"Analizza origine AI",
+      "btn.clean":"Pulisci i metadati","btn.analyze":"Analizza immagine",
       "btn.download":"Scarica immagine pulita","btn.share":"Condividi",
       "btn.saveShare":"Salva / Condividi","btn.fullscreen":"Apri a schermo intero",
       "chip.analyzing":"Analisi…","chip.cleaning":"Rimozione metadati…",
@@ -127,7 +127,7 @@
       "ui.footerAi":"The AI analysis reads metadata only: it does not detect invisible pixel watermarks (e.g. SynthID). Do not use this tool to pass AI content off as real or to strip someone else's attribution.",
       "ui.cleanedOne":"🧹 1 image cleaned on this device",
       "ui.cleanedMany":"🧹 {n} images cleaned on this device",
-      "btn.clean":"Clean metadata","btn.analyze":"Analyze AI origin",
+      "btn.clean":"Clean metadata","btn.analyze":"Analyze image",
       "btn.download":"Download clean image","btn.share":"Share",
       "btn.saveShare":"Save / Share","btn.fullscreen":"Open fullscreen",
       "chip.analyzing":"Analyzing…","chip.cleaning":"Removing metadata…",
