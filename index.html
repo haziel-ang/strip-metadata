@@ -86,7 +86,7 @@
   html,body{background:var(--bg);color:var(--ink)}
   body{font-family:"Hanken Grotesk",system-ui,sans-serif;min-height:100dvh;color:var(--ink);
     -webkit-font-smoothing:antialiased;line-height:1.5;position:relative;overflow-x:hidden;
-    padding:max(24px,env(safe-area-inset-top)) 20px max(40px,env(safe-area-inset-bottom));
+    padding:max(64px,calc(env(safe-area-inset-top) + 52px)) 20px max(40px,env(safe-area-inset-bottom));
     display:flex;flex-direction:column;align-items:center;transition:background .3s,color .3s}
   body.lock{overflow:hidden}
   .mesh{position:fixed;inset:0;z-index:-2;overflow:hidden}
