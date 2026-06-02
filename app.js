@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.4.0
+ * @version 1.4.1
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.4.0";
+  const APP_VERSION="1.4.1";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -483,6 +483,34 @@
   }
 
   /* ====================== PULIZIA ====================== */
+  /* Rende la pulizia "idempotente": dopo la ricodifica su canvas il browser
+     reinserisce comunque dei segmenti nel JPEG (profilo colore ICC, marcatori
+     Adobe/Photoshop). Qui li rimuoviamo, tenendo solo l'essenziale (APP0/JFIF +
+     tabelle + dati immagine), così il file salvato è davvero senza metadati e
+     reimportandolo non risulta più alcun "metadato incorporato". */
+  function stripJpegMarkers(buf){
+    const v=new DataView(buf), src=new Uint8Array(buf);
+    if(v.getUint16(0)!==0xFFD8) return buf;            // non è JPEG: lascia com'è
+    const parts=[src.subarray(0,2)];                   // SOI
+    let off=2;
+    while(off<v.byteLength){
+      if(src[off]!==0xFF){ parts.push(src.subarray(off)); break; }
+      const marker=v.getUint16(off);
+      if(marker===0xFFDA){ parts.push(src.subarray(off)); break; }   // SOS: copia dati+EOI così come sono
+      if(marker>=0xFFD0&&marker<=0xFFD9){ parts.push(src.subarray(off,off+2)); off+=2; continue; }
+      if(off+4>v.byteLength){ parts.push(src.subarray(off)); break; }
+      const len=v.getUint16(off+2), segEnd=off+2+len;
+      // Scarta APP1..APP15 (EXIF/XMP/ICC/IPTC/Adobe) e i commenti (COM); tiene APP0/JFIF.
+      const drop=(marker>=0xFFE1&&marker<=0xFFEF)||marker===0xFFFE;
+      if(!drop) parts.push(src.subarray(off,segEnd));
+      off=segEnd;
+    }
+    let total=0; parts.forEach(p=>total+=p.length);
+    const res=new Uint8Array(total); let p=0;
+    parts.forEach(seg=>{res.set(seg,p);p+=seg.length;});
+    return res.buffer;
+  }
+
   async function cleanImage(file){
     // Disegna i soli pixel su <canvas> e li ricodifica: il file in uscita non
     // contiene metadati. NB: i watermark nei pixel (es. SynthID) restano.
@@ -501,7 +529,11 @@
     bitmap.close&&bitmap.close();
     const outType=(file.type==="image/png"||file.type==="image/webp")?file.type:"image/jpeg";
     const quality=outType==="image/jpeg"?0.92:undefined;
-    const blob=await new Promise(r=>canvas.toBlob(r,outType,quality));
+    let blob=await new Promise(r=>canvas.toBlob(r,outType,quality));
+    // Per i JPEG, togli i segmenti APP/commenti reintrodotti dall'encoder del browser.
+    if(outType==="image/jpeg" && blob){
+      try{ blob=new Blob([stripJpegMarkers(await blob.arrayBuffer())],{type:"image/jpeg"}); }catch(e){}
+    }
     return {blob,type:outType,w:canvas.width,h:canvas.height};
   }
   function renameClean(name,type){ return name.replace(/\.[^.]+$/,"")+"-pulita."+ext(type); }
