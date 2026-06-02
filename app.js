@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.4.1
+ * @version 1.4.2
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.4.1";
+  const APP_VERSION="1.4.2";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -103,7 +103,8 @@
       "ai.iptcPresent.v":"presente, ma con valore non riconosciuto come AI",
       "ai.gen.k":"Software/generatore AI nei metadati",
       "ai.phrase.k":"Dichiarazione testuale nei metadati",
-      "ai.note":"<b>Limite importante:</b> questa analisi legge solo i <b>metadati</b> del file. I <b>watermark invisibili nei pixel</b> (es. Google <b>SynthID</b> di Gemini/Imagen) <b>non sono verificabili in questo browser</b>: serve il rilevatore ufficiale di Google. I metadati inoltre possono essere stati rimossi, quindi la loro assenza <b>non prova</b> che un'immagine non sia generata da AI.",
+      "ai.noteTitle":"Perché non rileva SynthID?",
+      "ai.note":"Questa analisi legge solo i <b>metadati</b> del file. I <b>watermark invisibili nei pixel</b> (es. Google <b>SynthID</b> di Gemini/Imagen) <b>non sono verificabili in questo browser</b>: serve il rilevatore ufficiale di Google. I metadati inoltre possono essere stati rimossi, quindi la loro assenza <b>non prova</b> che un'immagine non sia generata da AI.",
       "alt.preview":"anteprima","alt.result":"immagine pulita",
       "theme.system":"Sistema","theme.light":"Chiaro","theme.dark":"Scuro",
       "ui.credit":"© 2026 <b>profxeni</b> · Licenza <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: puoi copiarla e modificarla citando l'autore.",
@@ -168,7 +169,8 @@
       "ai.iptcPresent.v":"present, but with a value not recognized as AI",
       "ai.gen.k":"AI software/generator in metadata",
       "ai.phrase.k":"Text declaration in metadata",
-      "ai.note":"<b>Important limitation:</b> this analysis reads only the file's <b>metadata</b>. <b>Invisible pixel watermarks</b> (e.g. Google <b>SynthID</b> in Gemini/Imagen) <b>cannot be verified in this browser</b>: Google's official detector is required. Metadata may also have been stripped, so its absence <b>does not prove</b> an image is not AI-generated.",
+      "ai.noteTitle":"Why can't it detect SynthID?",
+      "ai.note":"This analysis reads only the file's <b>metadata</b>. <b>Invisible pixel watermarks</b> (e.g. Google <b>SynthID</b> in Gemini/Imagen) <b>cannot be verified in this browser</b>: Google's official detector is required. Metadata may also have been stripped, so its absence <b>does not prove</b> an image is not AI-generated.",
       "alt.preview":"preview","alt.result":"clean image",
       "theme.system":"System","theme.light":"Light","theme.dark":"Dark",
       "ui.credit":"© 2026 <b>profxeni</b> · Licensed <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: copy and remix it with attribution.",
@@ -477,8 +479,10 @@
       });
       mAIWrap.appendChild(list);
     }
-    const note=document.createElement("div"); note.className="ai-note";
-    note.innerHTML=t("ai.note"); // stringa interna fidata (HTML), non da input utente
+    // Nota a scomparsa (stesso stile di "Perché è sicura?" nel footer).
+    const note=document.createElement("details"); note.className="why ai-why";
+    note.innerHTML='<summary>'+esc(t("ai.noteTitle"))+'</summary>'+
+      '<p>'+t("ai.note")+'</p>';  // ai.note è una stringa interna fidata (HTML)
     mAIWrap.appendChild(note);
   }
 
