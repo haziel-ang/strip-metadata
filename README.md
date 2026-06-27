@@ -1,74 +1,112 @@
-# strip-metadata
+# noMeta — strip image metadata
 
-A lightweight, 100% client-side web app to analyze images, strip metadata, and
-export clean files. No image ever leaves your device.
+Una webapp che analizza e pulisce i metadati delle immagini direttamente
+nel browser. Niente upload, niente server, niente telemetria. Funziona
+offline.
 
-## Why it's safe even though it runs in a browser
+## Cosa fa
 
-**EN —** A web page is just code your browser downloads **once**. From that
-moment your photo is processed **entirely on your device**, in memory, using the
-browser's built-in tools (Canvas). It is never sent anywhere. This isn't only a
-promise: a strict security policy (`Content-Security-Policy: connect-src 'none'`)
-**technically blocks the page from making any network request**, so it *cannot*
-upload your image even if it wanted to. Proof: switch on airplane mode and it
-still works; or open DevTools → Network and you'll see zero uploads.
+**Pulizia.** Ricodifica l'immagine tramite `<canvas>` e la riesporta senza
+EXIF (GPS, fotocamera, data, software), XMP, IPTC, profilo colore ICC e
+manifest **C2PA / Content Credentials**. Nei JPEG rimuove anche i marker
+APP e COM che il browser reinserisce dopo la codifica, così il file
+esportato è davvero pulito anche se lo ricarichi. I file HEIC vengono
+convertiti in JPG. Supporta JPG, PNG, WebP, HEIC.
 
-**IT —** Una pagina web è solo codice che il browser scarica **una volta**. Da
-quel momento la tua foto viene elaborata **interamente sul tuo dispositivo**, in
-memoria, con gli strumenti integrati del browser (Canvas), e non viene mai
-inviata. Non è solo una promessa: una policy di sicurezza rigida
-(`Content-Security-Policy: connect-src 'none'`) **impedisce tecnicamente alla
-pagina qualsiasi richiesta di rete**, quindi *non può* caricare la tua immagine
-nemmeno volendo. Prova del nove: attiva la modalità aereo e funziona lo stesso;
-oppure apri DevTools → Network e vedrai zero upload.
+**Analisi AI.** Legge i metadati del file (non i pixel) e cerca segnali di
+origine artificiale in quattro categorie:
 
-## Struttura
+1. **C2PA / Content Credentials** — manifest di provenienza incorporato
+   nello standard C2PA (Adobe/CAI). Rileva il contenitore JUMBF nei
+   JPEG/PNG/WebP e distingue azioni come `c2pa.created` (generata) e
+   `c2pa.edited` / `c2pa.placed` (modificata con AI).
 
-- `index.html` — markup + CSS (font incorporati in base64) e i controlli lingua/tema.
-- `app.js` — tutta la logica (separata dall'HTML per una CSP più stretta).
-- `SECURITY.md` — sintesi dell'hardening: ogni misura e *cosa evita*.
-- `RESEARCH.md` — ricerca su provenienza AI, C2PA, IPTC, SynthID.
+2. **IPTC DigitalSourceType** — etichetta standard per il giornalismo.
+   Riconosce `trainedAlgorithmicMedia`, `compositeWithTrainedAlgorithmicMedia`,
+   `compositeSynthetic` e `algorithmicMedia`.
 
-> Apertura locale: per via della CSP (`script-src 'self'`), apri tramite un piccolo
-> server (`python3 -m http.server`) anziché con doppio clic su `file://`. Su GitHub
-> Pages funziona direttamente.
+3. **Software e generatori noti** — cerca nei metadati EXIF, XMP e blocchi
+   testuali PNG/WebP i nomi di oltre 40 generatori: DALL·E, ChatGPT,
+   Midjourney, Adobe Firefly, Gemini/Imagen, Stable Diffusion, ComfyUI,
+   FLUX, Grok, Leonardo.Ai, Ideogram e molti altri.
 
-## Lingua e tema
+4. **Parametri di workflow** — prompt, seed, sampler, model hash, CFG
+   scale, steps, riferimenti a nodi ComfyUI. Più parametri coerenti
+   compaiono insieme, più il segnale è affidabile.
 
-- **Doppia lingua IT/EN** con selettore in alto a destra (rilevamento automatico
-  dalla lingua del browser, scelta salvata in `localStorage`).
-- **Tema** Sistema / Chiaro / Scuro (di default segue il dispositivo).
+Il verdetto è a tre livelli: **rilevato** (segnale forte, es. C2PA o
+IPTC), **indizio** (tracce deboli), **nessun segnale** (metadati puliti).
 
-## Features
+## Cosa NON può fare (e perché)
 
-- **Pulisci i metadati** — re-encodes the image via `<canvas>` to remove EXIF
-  (GPS, camera, timestamp, software), XMP, IPTC, ICC and embedded **C2PA /
-  Content Credentials** manifests.
-- **Analizza origine AI** — reads the file's *metadata only* to look for
-  AI-provenance signals: C2PA manifest, IPTC `DigitalSourceType`
-  (`trainedAlgorithmicMedia`, …), XMP markers, and known AI generator names
-  (Midjourney, DALL·E, Firefly, Gemini/Imagen, Stable Diffusion, …).
-- **Popup analitico** — shows the cleaned/removed metadata and the AI-origin
-  verdict in one place.
+**SynthID e watermark invisibili nei pixel.** Google ha sviluppato SynthID,
+un watermark impercettibile codificato direttamente nei pixel delle
+immagini generate da Gemini/Imagen. Rilevarlo richiede il detector
+ufficiale di Google, che non è eseguibile in un browser. noMeta legge
+solo i metadati: se un'immagine ha watermark nei pixel ma metadati puliti,
+apparirà «nessun segnale». Per SynthID serve il [rilevatore
+ufficiale](https://synthid.google.com).
 
-### Important limitation
+**Metadati assenti ≠ immagine reale.** I metadati si rimuovono con
+qualsiasi tool, incluso noMeta. L'assenza di segnali AI nei metadati
+**non prova** che l'immagine sia umana.
 
-The AI analysis inspects **metadata only**. It does **not** detect invisible
-pixel-domain watermarks such as Google **SynthID** — those require Google's
-official detector and cannot be verified in a browser. Absence of metadata does
-not prove an image is not AI-generated.
+**Metadati falsificabili.** Chi genera un'immagine AI può scrivere
+EXIF fuorvianti (es. il modello di una fotocamera). Il verdetto è un
+indizio tecnico, non una perizia forense.
 
-See [`RESEARCH.md`](./RESEARCH.md) for the full research on AI image provenance,
-C2PA, IPTC, SynthID, and watermark robustness.
+**Niente analisi dei pixel.** Non usa reti neurali, non classifica il
+contenuto visivo, non cerca artefatti di generazione. Solo metadati.
 
-## License
+## Come funziona la sicurezza
 
-© 2026 **profxeni** — licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/):
-you may copy and remix it, as long as you credit the author. See [`LICENSE`](./LICENSE).
+La pagina carica una **Content Security Policy** che vieta qualsiasi
+richiesta di rete (`connect-src 'none'`). Il JavaScript è in un file
+separato (`app.js`) così la CSP può bloccare anche gli script inline
+(`script-src 'self'`). L'immagine viene elaborata in memoria tramite
+l'API Canvas del browser e il risultato è un Blob scaricabile.
+Nessun dato esce dal dispositivo.
 
-## Ethics
+Prova: attiva la **modalità aereo** e funziona comunque.
 
-Stripping metadata has strong legitimate privacy uses (protecting GPS/home
-location, journalists, activists). Do **not** use it to pass AI content off as
-real or to remove someone else's attribution; in some jurisdictions (e.g. the EU
-AI Act) disclosure of AI origin is mandatory.
+## Formati supportati
+
+| Formato | Pulizia | Analisi AI | Note |
+|---|---|---|---|
+| JPEG | Sì | Sì | Rimuove anche marker APP/COM reinseriti dal browser |
+| PNG | Sì | Sì | Legge blocchi tEXt, iTXt, zTXt (anche compressi) |
+| WebP | Sì | Sì | Rileva EXIF, XMP, C2PA nel contenitore RIFF |
+| HEIC | Sì (→JPG) | Parziale | Convertito in JPG; metadati rimossi |
+
+## Privacy
+
+- **Contatore locale** in `localStorage`: quante immagini hai ripulito su
+  *questo* dispositivo. Nessun dato esce dal browser.
+- Lingua e tema salvati in `localStorage`, nessun cookie.
+- Nessuna libreria esterna, nessun font da Google, nessun CDN.
+  La pagina è un HTML + un JS autosufficienti.
+
+## Etica
+
+Rimuovere i metadati ha usi legittimi: proteggere il GPS di casa, il
+modello del telefono, la data. Giornalisti, attivisti e chiunque voglia
+privacy ne ha diritto.
+
+**Non usarlo** per spacciare contenuti AI come reali o per rimuovere
+l'attribuzione altrui. In molte giurisdizioni (es. EU AI Act) dichiarare
+l'origine AI è obbligatorio.
+
+## Licenza
+
+© 2026 **profxeni** — [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/):
+puoi copiare e modificare, citando l'autore. Vedi [`LICENSE`](./LICENSE).
+
+## File
+
+| File | Contenuto |
+|---|---|
+| `index.html` | Markup, CSS (font in base64), controlli lingua/tema |
+| `app.js` | Logica: parsing EXIF/PNG/WebP, pulizia, analisi AI, UI |
+| `SECURITY.md` | Hardening CSP, anti-XSS, anti-clickjacking |
+| `RESEARCH.md` | Ricerca su provenienza AI, C2PA, IPTC, SynthID |
+| `CHANGELOG.md` | Cronologia versioni |
