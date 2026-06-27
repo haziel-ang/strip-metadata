@@ -130,7 +130,7 @@
       "info.clean1":"Riesporta i pixel via canvas e rimuove EXIF, XMP, IPTC, ICC e manifest C2PA quando il formato lo consente.",
       "info.clean2":"Nei JPEG elimina anche i marker APP/COM reinseriti dal browser, mantenendo il file scaricabile e pulito.",
       "info.clean3":"Con più immagini lavora in serie, una alla volta, senza zip e senza librerie esterne.",
-      "info.limitsTitle":"Limiti onesti",
+      "info.limitsTitle":"Limiti reali",
       "info.limit1":"Non verifica watermark invisibili nei pixel come SynthID: servono rilevatori ufficiali esterni.",
       "info.limit2":"Metadati assenti o ripuliti non provano che l'immagine non sia AI.",
       "info.limit3":"I metadati possono essere falsificati: il verdetto è un indizio tecnico, non una perizia.",
