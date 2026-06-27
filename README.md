@@ -1,8 +1,15 @@
 # noMeta — strip image metadata
 
-Una webapp che analizza e pulisce i metadati delle immagini direttamente
-nel browser. Niente upload, niente server, niente telemetria. Funziona
-offline.
+noMeta analizza e pulisce i metadati delle immagini **direttamente nel tuo
+browser, sempre e solo in locale**. Non carica nulla su server remoti, non
+usa API esterne, non raccoglie telemetria. Il file che scegli non lascia
+mai il tuo dispositivo: viene letto in memoria, elaborato con le API
+native del browser (Canvas, DataView, TextDecoder) e il risultato è un
+Blob che puoi scaricare. Funziona anche offline.
+
+Lo scopo è uno solo: **nessun dato deve poter uscire da questo ambiente**.
+Ogni scelta tecnica — dalla Content Security Policy al design interno —
+serve a garantirlo.
 
 ## Cosa fa
 
@@ -60,14 +67,30 @@ contenuto visivo, non cerca artefatti di generazione. Solo metadati.
 
 ## Come funziona la sicurezza
 
-La pagina carica una **Content Security Policy** che vieta qualsiasi
-richiesta di rete (`connect-src 'none'`). Il JavaScript è in un file
-separato (`app.js`) così la CSP può bloccare anche gli script inline
-(`script-src 'self'`). L'immagine viene elaborata in memoria tramite
-l'API Canvas del browser e il risultato è un Blob scaricabile.
-Nessun dato esce dal dispositivo.
+Ogni elaborazione avviene **interamente in locale**, nel browser, senza
+che alcun byte del file originale o dell'immagine pulita venga mai
+inviato in rete. Questo vincolo non è una promessa: è imposto dal
+browser stesso tramite una **Content Security Policy**.
 
-Prova: attiva la **modalità aereo** e funziona comunque.
+La CSP dichiara `connect-src 'none'`: il browser **rifiuta a livello
+di runtime** qualsiasi tentativo di connessione (fetch, XHR,
+WebSocket, EventSource, beacon). Anche se codice malevolo provasse a
+inviare dati, il browser lo bloccherebbe prima che il pacchetto esca
+dalla macchina.
+
+Il JavaScript è separato in `app.js` (`script-src 'self'` senza
+`unsafe-inline`): questo impedisce l'esecuzione di script iniettati
+nel markup, anche se qualcuno riuscisse a inserire HTML dannoso via
+metadati. Ogni valore letto dal file passa attraverso una funzione di
+escape prima di toccare il DOM.
+
+Il flusso è: `File → ArrayBuffer → parsing EXIF/PNG/WebP (in memoria)
+→ Canvas → Blob → download`. Il file originale non viene mai
+caricato in rete — non c'è un `action` in un `<form>`, non c'è
+nessuna chiamata HTTP.
+
+Prova: attiva la **modalità aereo** e funziona comunque. Apri
+DevTools → Network durante l'uso: vedrai **zero richieste**.
 
 ## Formati supportati
 
@@ -80,11 +103,21 @@ Prova: attiva la **modalità aereo** e funziona comunque.
 
 ## Privacy
 
-- **Contatore locale** in `localStorage`: quante immagini hai ripulito su
-  *questo* dispositivo. Nessun dato esce dal browser.
-- Lingua e tema salvati in `localStorage`, nessun cookie.
-- Nessuna libreria esterna, nessun font da Google, nessun CDN.
-  La pagina è un HTML + un JS autosufficienti.
+Tutto ciò che accade, accade **solo sul tuo dispositivo, in locale**:
+
+- **Il file che scegli** — viene aperto in memoria (ArrayBuffer), mai
+  inviato a un server.
+- **L'analisi dei metadati** — parsing binario diretto via DataView.
+- **La pulizia** — ridisegno su Canvas, riesportazione come Blob.
+- **Il contatore** (`localStorage`) — quante immagini hai ripulito su
+  *questo* dispositivo. Nessun beacon, nessun analytics.
+- **Lingua e tema** — salvati solo in `localStorage`. Nessun cookie.
+- **Nessuna dipendenza esterna**: niente Google Fonts, niente CDN,
+  niente librerie npm. La pagina è due file statici autosufficienti
+  (`index.html` + `app.js`).
+
+Il browser è l'ambiente, il browser è il limite. Niente esce, niente
+entra.
 
 ## Etica
 
