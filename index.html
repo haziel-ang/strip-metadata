@@ -2,7 +2,7 @@
 <!--
   ============================================================================
    Pulisci — Rimozione metadati & analisi origine AI
-   Versione : 1.9.2
+   Versione : 1.9.4
    Anno     : 2026
    Sviluppo : profxeni
    Licenza  : CC BY 4.0 — profxeni (copia e remix con citazione dell'autore)
@@ -142,10 +142,14 @@
   .sub{color:var(--ink-soft);font-size:1.02rem;margin-top:12px;max-width:32ch;margin-inline:auto}
   /* Tagline + info icon sotto il sottotitolo */
   .badges{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:12px;flex-wrap:wrap}
-  .badge-info{background:var(--paper);color:var(--accent-deep);border:1.5px solid var(--accent-soft);cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s;display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:.78rem;font-weight:600;letter-spacing:.02em;padding:6px 14px;border-radius:100px;-webkit-tap-highlight-color:transparent}
+  .badge-lock{display:inline-flex;align-items:center;gap:6px}
+  .lock-ico{width:13px;height:13px;flex:0 0 auto}
+  .badge-info{background:var(--paper);color:var(--accent-deep);border:1.5px solid var(--accent-soft);cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s;display:inline-flex;align-items:center;justify-content:center;font-family:inherit;font-size:.78rem;font-weight:600;letter-spacing:.02em;width:36px;height:36px;padding:0;border-radius:50%;-webkit-tap-highlight-color:transparent}
   .badge-info:hover{background:var(--accent-soft);box-shadow:0 0 0 4px var(--accent-soft)}
-  .badge-info:active{transform:scale(.96)}
-  .badge-info .info-i{font-size:.92rem;font-style:normal;font-weight:700}
+  .badge-info:active{transform:scale(.94)}
+  .badge-info .info-i{font-size:1.05rem;font-style:normal;font-weight:700;line-height:1}
+  /* Versione nel popup info */
+  .info-version{flex:0 0 auto;margin-left:auto;font-size:.72rem;font-weight:600;color:var(--ink-soft);white-space:nowrap;align-self:flex-start;margin-top:2px}
   /* Brand / hero lockup — "n" + diaframma (la "o") + "Meta".
      n/Meta seguono il tema (var(--ink)); il diaframma resta blu (var(--accent)). */
   .brand{display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px}
@@ -400,8 +404,8 @@
     </div>
     <h1 data-i18n-html="ui.h1"></h1>
     <div class="badges">
-      <span class="badge"><span class="dot"></span><span data-i18n="ui.badge"></span></span>
-      <button class="badge badge-info" id="headerInfoBtn" type="button" aria-label="Apri approfondimenti"><span class="info-i">&#8505;</span> <span data-i18n="ui.badgeInfo">Come funziona</span></button>
+      <span class="badge badge-lock"><svg class="lock-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span data-i18n="ui.footerLock"></span></span>
+      <button class="badge badge-info" id="headerInfoBtn" type="button" aria-label="Apri approfondimenti"><span class="info-i">&#8505;</span></button>
     </div>
   </header>
 
@@ -493,6 +497,7 @@
     <div class="modal-head">
       <div class="ok">i</div>
       <div><h3 id="infoTitle" data-i18n="info.title"></h3><p data-i18n="info.sub"></p></div>
+      <span class="info-version" id="infoVersion"></span>
     </div>
     <div class="info-scroll">
       <div class="info-grid">
@@ -557,6 +562,6 @@
   </div>
 </div>
 
-<script src="app.js?v=1.9.2" defer></script>
+<script src="app.js?v=1.9.4" defer></script>
 </body>
 </html>

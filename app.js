@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.9.2";
+  const APP_VERSION="1.9.4";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -322,7 +322,8 @@
         infoModal=$("infoModal"), infoBackdrop=$("infoBackdrop"), infoClose=$("infoClose"),
         batch=$("batch"), batchList=$("batchList"), batchTitle=$("batchTitle"),
         batchDownloadAll=$("batchDownloadAll"), batchReset=$("batchReset"), appVer=$("appVer"),
-        headerInfoBtn=$("headerInfoBtn"), footerInfoBtn=$("footerInfoBtn");
+        headerInfoBtn=$("headerInfoBtn"), footerInfoBtn=$("footerInfoBtn"),
+        infoVersion=$("infoVersion");
 
   let batchItems=[], batchURLs=[];
 
@@ -1062,6 +1063,7 @@
   }
 
   function openInfo(){
+    if(infoVersion) infoVersion.textContent="v"+APP_VERSION;
     infoModal.classList.add("open");
     infoModal.setAttribute("aria-hidden","false");
     document.body.classList.add("lock");
