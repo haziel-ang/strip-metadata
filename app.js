@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.9.2
+ * @version 1.10.0
  * @year    2026
  * @author  profxeni
  *
@@ -32,6 +32,7 @@
   const MAX_META_CHARS=512;            // lunghezza massima mostrata per un valore
   const MAX_SCAN_BYTES=2*1024*1024;    // byte di metadati analizzati per l'AI scan
   const MAX_PIXELS=80*1000*1000;       // ~80 MP: guardia contro "decompression bomb"
+  const MAX_JPEG_SEG=4096;             // tetto massimo segmenti JPEG (anti-DoS)
 
   // Solo immagini raster: gli SVG sono esclusi (possono contenere script).
   function isAllowedType(t){ return /^image\//.test(t) && t!=="image/svg+xml"; }
@@ -361,14 +362,28 @@
       if(view.getUint16(tiffStart+2,little)!==0x002A) return out;
       const TYPE_SIZE={1:1,2:1,3:2,4:4,5:8,7:1,9:4,10:8};
       // `count` arriva dal file: lo limitiamo (anti-DoS) per non leggere stringhe enormi.
-      function readASCII(off,count){count=Math.min(count,MAX_META_CHARS);let s="";for(let i=0;i<count;i++){const c=view.getUint8(off+i);if(c===0)break;s+=String.fromCharCode(c);}return s.trim();}
+      function readASCII(off,count){
+        // SICUREZZA — Bound-check: non leggere fuori dal buffer.
+        if(off<0 || off>=view.byteLength) return "";
+        count=Math.min(count,MAX_META_CHARS,view.byteLength-off);let s="";for(let i=0;i<count;i++){const c=view.getUint8(off+i);if(c===0)break;s+=String.fromCharCode(c);}return s.trim();}
       function readRational(off){return u32(off)/u32(off+4);}
       function readIFD(dirStart){
-        const entries=u16(dirStart); const tags={};
+        // SICUREZZA — Bound check: l'IFD non può puntare fuori dal buffer.
+        if(dirStart<0 || dirStart+2>view.byteLength) return {};
+        const entries=u16(dirStart);
+        // SICUREZZA — Anti-DoS: un IFD malformato può dichiarare fino a 65535 entry.
+        if(entries>512) return {};
+        const tags={};
         for(let i=0;i<entries;i++){
-          const e=dirStart+2+i*12, tag=u16(e), type=u16(e+2), count=u32(e+4);
+          const e=dirStart+2+i*12;
+          if(e+12>view.byteLength) break;
+          const tag=u16(e), type=u16(e+2), count=u32(e+4);
           const sz=(TYPE_SIZE[type]||1)*count; let valOff=e+8;
-          if(sz>4) valOff=tiffStart+u32(e+8);
+          // SICUREZZA — Non seguire offset fuori dal buffer.
+          if(sz>4){
+            valOff=tiffStart+u32(e+8);
+            if(valOff<0 || valOff+sz>view.byteLength) continue;
+          }
           tags[tag]={type,count,valOff};
         }
         return tags;
@@ -401,14 +416,22 @@
     const view=new DataView(buf), res={items:[],bytes:0,gps:null};
     if(view.getUint16(0)!==0xFFD8) return null;
     let off=2; const seen={xmp:false,icc:false,iptc:false,comment:false,c2pa:false};
+    // SICUREZZA — Anti-DoS: tetto massimo sui segmenti JPEG percorsi.
+    let segCount=0;
     while(off<view.byteLength-1){
       if(view.getUint8(off)!==0xFF){off++;continue;}
       const marker=view.getUint16(off);
       if(marker===0xFFDA) break;
       if(marker>=0xFFD0 && marker<=0xFFD9){off+=2;continue;}
-      const len=view.getUint16(off+2), segStart=off+4;
+      // SICUREZZA — Se non ci sono abbastanza byte per leggere la lunghezza.
+      if(off+4>view.byteLength) break;
+      const len=view.getUint16(off+2);
+      // SICUREZZA — Lunghezza minima per un segmento è 2 (include se stessa);
+      // un valore <2 o overflow indica dati corrotti.
+      if(len<2 || segCount++>MAX_JPEG_SEG) break;
+      const segStart=off+4;
       if(marker===0xFFE1){
-        let hdr="";for(let i=0;i<6&&segStart+i<view.byteLength;i++)hdr+=String.fromCharCode(view.getUint8(segStart+i));
+        let hdr="";const hdrEnd=Math.min(segStart+6,view.byteLength);for(let i=segStart;i<hdrEnd;i++)hdr+=String.fromCharCode(view.getUint8(i));
         res.bytes+=len;
         if(hdr.startsWith("Exif")){
           const exif=parseTIFF(view, segStart+6);
@@ -574,12 +597,17 @@
     try{
       if(type==="image/jpeg"){
         let off=2;
+        // SICUREZZA — Anti-DoS: tetto segmenti come in parseJPEG.
+        let segCount=0;
         while(off<view.byteLength-1){
           if(view.getUint8(off)!==0xFF){off++;continue;}
           const marker=view.getUint16(off);
           if(marker===0xFFDA||marker===0xFFD9) break;
           if(marker>=0xFFD0&&marker<=0xFFD9){off+=2;continue;}
+          // SICUREZZA — Bound-check: servono 4 byte per leggere la lunghezza.
+          if(off+4>view.byteLength) break;
           const len=view.getUint16(off+2);
+          if(len<2 || segCount++>MAX_JPEG_SEG) break;
           if((marker>=0xFFE0&&marker<=0xFFEF)||marker===0xFFFE){
             push(off+4, off+2+len);
             if(marker===0xFFEB) flags.c2paBox=true; // APP11 → contenitore JUMBF/C2PA
@@ -737,13 +765,18 @@
     if(v.getUint16(0)!==0xFFD8) return buf;            // non è JPEG: lascia com'è
     const parts=[src.subarray(0,2)];                   // SOI
     let off=2;
+    // SICUREZZA — Anti-DoS: tetto massimo sui segmenti percorsi.
+    let segCount=0;
     while(off<v.byteLength){
       if(src[off]!==0xFF){ parts.push(src.subarray(off)); break; }
       const marker=v.getUint16(off);
       if(marker===0xFFDA){ parts.push(src.subarray(off)); break; }   // SOS: copia dati+EOI così come sono
       if(marker>=0xFFD0&&marker<=0xFFD9){ parts.push(src.subarray(off,off+2)); off+=2; continue; }
       if(off+4>v.byteLength){ parts.push(src.subarray(off)); break; }
-      const len=v.getUint16(off+2), segEnd=off+2+len;
+      const len=v.getUint16(off+2);
+      // SICUREZZA — len minimo 2, altrimenti dati corrotti.
+      if(len<2 || segCount++>MAX_JPEG_SEG) break;
+      const segEnd=off+2+len;
       // Scarta APP1..APP15 (EXIF/XMP/ICC/IPTC/Adobe) e i commenti (COM); tiene APP0/JFIF.
       const drop=(marker>=0xFFE1&&marker<=0xFFEF)||marker===0xFFFE;
       if(!drop) parts.push(src.subarray(off,segEnd));
@@ -780,7 +813,12 @@
     }
     return {blob,type:outType,w:canvas.width,h:canvas.height};
   }
-  function renameClean(name,type){ return name.replace(/\.[^.]+$/,"")+"-pulita."+ext(type); }
+  function renameClean(name,type){
+    // SICUREZZA — Previene path traversal: prende solo l'ultimo componente del nome
+    // (dopo l'ultimo / o \), rimuove .. e caratteri non sicuri.
+    name=name.replace(/^.*[\\/]/,"").replace(/^[.]+/,"").replace(/[^a-z0-9_.() -]/gi,"_")||"image";
+    return name.replace(/\.[^.]+$/,"")+"-pulita."+ext(type);
+  }
 
   // Riepilogo sotto i pulsanti di scelta, ricalcolato (anche al cambio lingua).
   function setChoiceHint(){
@@ -986,7 +1024,7 @@
       mActions.appendChild(c);
       return;
     }
-    const canShare = navigator.canShare && cleanedFile && navigator.canShare({files:[cleanedFile]});
+    let canShare=false; try{ canShare=navigator.canShare&&cleanedFile&&navigator.canShare({files:[cleanedFile]}); }catch(e){}
     const secure = window.isSecureContext;
     if(isIOS){
       iosHint.classList.add("show");
