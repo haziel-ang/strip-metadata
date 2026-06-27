@@ -2,7 +2,7 @@
 <!--
   ============================================================================
    Pulisci — Rimozione metadati & analisi origine AI
-   Versione : 1.9.1
+   Versione : 1.9.2
    Anno     : 2026
    Sviluppo : profxeni
    Licenza  : CC BY 4.0 — profxeni (copia e remix con citazione dell'autore)
@@ -141,11 +141,11 @@
   @keyframes sheen{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
   .sub{color:var(--ink-soft);font-size:1.02rem;margin-top:12px;max-width:32ch;margin-inline:auto}
   /* Tagline + info icon sotto il sottotitolo */
-  .tagline-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;max-width:44ch;margin-inline:auto}
-  .tagline{font-size:.84rem;color:var(--ink-soft);line-height:1.45;text-align:center}
-  .tagline-info{flex:0 0 auto;width:26px;height:26px;border:none;border-radius:50%;background:var(--accent-soft);color:var(--accent-deep);font-size:.82rem;cursor:pointer;display:grid;place-items:center;transition:background .2s,transform .15s;-webkit-tap-highlight-color:transparent}
-  .tagline-info:hover{background:var(--accent);color:#fff}
-  .tagline-info:active{transform:scale(.92)}
+  .badges{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:12px;flex-wrap:wrap}
+  .badge-info{background:var(--paper);color:var(--accent-deep);border:1.5px solid var(--accent-soft);cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s;display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:.78rem;font-weight:600;letter-spacing:.02em;padding:6px 14px;border-radius:100px;-webkit-tap-highlight-color:transparent}
+  .badge-info:hover{background:var(--accent-soft);box-shadow:0 0 0 4px var(--accent-soft)}
+  .badge-info:active{transform:scale(.96)}
+  .badge-info .info-i{font-size:.92rem;font-style:normal;font-weight:700}
   /* Brand / hero lockup — "n" + diaframma (la "o") + "Meta".
      n/Meta seguono il tema (var(--ink)); il diaframma resta blu (var(--accent)). */
   .brand{display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px}
@@ -214,6 +214,9 @@
 
   footer{text-align:center;color:var(--ink-soft);font-size:.8rem;opacity:0;animation:rise .7s .3s forwards;line-height:1.6}
   footer .lock{display:inline-flex;align-items:center;gap:6px;color:var(--accent-deep);font-weight:600}
+  .footer-info-dot{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin:6px auto 2px;border:1.5px solid var(--accent-soft);border-radius:50%;color:var(--accent-deep);font-size:.9rem;font-style:normal;font-weight:700;cursor:pointer;background:var(--paper);transition:background .2s,transform .15s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+  .footer-info-dot:hover{background:var(--accent-soft);box-shadow:0 0 0 5px var(--accent-soft)}
+  .footer-info-dot:active{transform:scale(.94)}
   footer .lock svg{width:13px;height:13px}
   footer a{color:var(--accent-deep);text-decoration:underline;text-underline-offset:2px}
   .credit{display:inline-block;margin-top:8px;opacity:.85}
@@ -353,6 +356,7 @@
   .info-panel li::before{content:"";position:absolute;left:0;top:.63em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
   .info-privacy{margin:2px 0 12px;padding:12px 13px;border-radius:13px;border:1px solid var(--clear-border);
     background:var(--clear-bg);font-size:.86rem;color:var(--ink-soft);line-height:1.5}
+  .info-note{margin:6px 0 0;font-size:.8rem;color:var(--ink-soft);line-height:1.45;font-style:italic}
   .info-deep{margin:0}
   .info-deep summary{display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--accent-deep);font-size:.88rem;font-weight:700}
   .info-deep summary::-webkit-details-marker{display:none}
@@ -395,11 +399,9 @@
       <span class="brandname">n<svg class="ap" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.23,1.25 L21.19,6.45 L15.86,9.46 Z M21.43,6.83 L21.40,17.18 L16.13,14.08 Z M21.19,17.58 L12.21,22.73 L12.26,16.61 Z M11.77,22.75 L2.81,17.55 L8.14,14.54 Z M2.57,17.17 L2.60,6.82 L7.87,9.92 Z M2.81,6.42 L11.79,1.27 L11.74,7.39 Z"/></svg>Meta</span>
     </div>
     <h1 data-i18n-html="ui.h1"></h1>
-    <span class="badge"><span class="dot"></span><span data-i18n="ui.badge"></span></span>
-    <p class="sub" data-i18n-html="ui.sub"></p>
-    <div class="tagline-row">
-      <span class="tagline" id="tagline"></span>
-      <button class="tagline-info" id="taglineInfoBtn" type="button" aria-label="Apri approfondimenti">ℹ</button>
+    <div class="badges">
+      <span class="badge"><span class="dot"></span><span data-i18n="ui.badge"></span></span>
+      <button class="badge badge-info" id="headerInfoBtn" type="button" aria-label="Apri approfondimenti"><span class="info-i">&#8505;</span> <span data-i18n="ui.badgeInfo">Come funziona</span></button>
     </div>
   </header>
 
@@ -456,14 +458,8 @@
     <span class="lock">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
       <span data-i18n="ui.footerLock"></span>
-    </span><br>
-    <span data-i18n="ui.footerOffline"></span>
-    <details class="why">
-      <summary data-i18n="ui.whySafeTitle"></summary>
-      <p data-i18n-html="ui.whySafe"></p>
-    </details>
-    <small data-i18n="ui.footerHeic"></small><br>
-    <small data-i18n="ui.footerAi"></small><br>
+    </span>
+    <span class="footer-info-dot" id="footerInfoBtn" role="button" tabindex="0" aria-label="Apri approfondimenti" title="Apri approfondimenti">&#8505;</span>
     <small class="credit" data-i18n-html="ui.credit"></small><br>
     <small class="ver" id="appVer"></small>
   </footer>
@@ -533,6 +529,15 @@
             <p data-i18n="info.deep"></p>
           </details>
         </section>
+        <section class="info-panel">
+          <h4 data-i18n="info.safetyTitle"></h4>
+          <p class="info-privacy" data-i18n-html="info.safetyText"></p>
+          <p class="info-note" data-i18n="info.heic"></p>
+        </section>
+        <section class="info-panel">
+          <h4 data-i18n="info.synthTitle"></h4>
+          <p class="info-privacy" data-i18n-html="info.synthText"></p>
+        </section>
       </div>
     </div>
   </div>
@@ -552,6 +557,6 @@
   </div>
 </div>
 
-<script src="app.js?v=1.9.1" defer></script>
+<script src="app.js?v=1.9.2" defer></script>
 </body>
 </html>

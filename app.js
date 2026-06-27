@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.9.1
+ * @version 1.9.2
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.9.1";
+  const APP_VERSION="1.9.2";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -48,18 +48,12 @@
     it:{
       "ui.badge":"100% nel tuo browser",
       "ui.h1":"Pulisci i tuoi <em>scatti</em>",
-      "ui.sub":"Le foto parlano. Questo le fa tacere: niente GPS, niente dispositivo, niente tag nascosti. <b>Resta tutto con te.</b>",
-      "ui.tagline":"Analizza metadati, GPS e segnali di origine AI — tutto offline nel tuo browser.",
-      "ui.taglineInfo":"Scopri di più",
-      "ui.taglineAria":"Apri approfondimenti su cosa controlla noMeta",
+      "ui.badgeInfo":"Come funziona",
       "ui.dropTitle":"Carica un'immagine",
       "ui.dropDesc":"Trascina una o più immagini, oppure tocca per sceglierle",
       "ui.choiceQ":"Cosa vuoi fare con questa immagine?",
       "ui.reset":"↺ Carica un'altra immagine",
       "ui.footerLock":"Elaborazione locale",
-      "ui.footerOffline":"Nessuna immagine viene caricata online. Puoi usarla anche offline.",
-      "ui.footerHeic":"*I file HEIC vengono convertiti in JPG durante la pulizia.",
-      "ui.footerAi":"L'analisi AI legge solo i metadati: non rileva i watermark invisibili nei pixel (es. SynthID). Non usare questo strumento per spacciare contenuti AI come reali o per rimuovere l'attribuzione altrui.",
       "ui.cleanedOne":"🧹 1 immagine ripulita su questo dispositivo",
       "ui.cleanedMany":"🧹 {n} immagini ripulite su questo dispositivo",
       "batch.title":"{n} immagini","batch.processing":"Elaborazione…","batch.error":"Errore",
@@ -147,24 +141,21 @@
       "alt.preview":"anteprima","alt.result":"immagine pulita",
       "theme.system":"Sistema","theme.light":"Chiaro","theme.dark":"Scuro",
       "ui.credit":"© 2026 <b>profxeni</b> · Licenza <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: puoi copiarla e modificarla citando l'autore.",
-      "ui.whySafeTitle":"Perché è sicura?",
-      "ui.whySafe":"Gira nel browser, ma non carica niente. La pagina si scarica <b>una volta</b>; da lì la foto è elaborata <b>solo sul tuo dispositivo</b>, in memoria. Una regola di sicurezza (<code>connect-src 'none'</code>) blocca ogni richiesta di rete, quindi l'immagine non può uscire nemmeno per errore. Prova del nove: attiva la <b>modalità aereo</b> e funziona lo stesso."
+      "info.safetyTitle":"Sicurezza",
+      "info.safetyText":"Gira nel browser, ma non carica niente. La pagina si scarica <b>una volta</b>; da lì la foto è elaborata <b>solo sul tuo dispositivo</b>, in memoria. Una regola di sicurezza (<code>connect-src 'none'</code>) blocca ogni richiesta di rete, quindi l'immagine non può uscire nemmeno per errore. Prova del nove: attiva la <b>modalità aereo</b> e funziona lo stesso.",
+      "info.heic":"*I file HEIC vengono convertiti in JPG durante la pulizia.",
+      "info.synthTitle":"Perché non rileva SynthID?",
+      "info.synthText":"L'analisi AI legge solo i <b>metadati</b> del file. I <b>watermark invisibili nei pixel</b> (es. Google <b>SynthID</b> di Gemini/Imagen) <b>non sono verificabili in questo browser</b>: serve il rilevatore ufficiale di Google. I metadati inoltre possono essere stati rimossi, quindi la loro assenza <b>non prova</b> che un'immagine non sia generata da AI. Non usare questo strumento per spacciare contenuti AI come reali o per rimuovere l'attribuzione altrui."
     },
     en:{
       "ui.badge":"100% in your browser",
       "ui.h1":"Clean your <em>shots</em>",
-      "ui.sub":"Photos talk. This makes them stop: no GPS, no device, no hidden tags. <b>Everything stays with you.</b>",
-      "ui.tagline":"Analyzes metadata, GPS and AI-origin signals — all offline in your browser.",
-      "ui.taglineInfo":"Learn more",
-      "ui.taglineAria":"Open details about what noMeta checks",
+      "ui.badgeInfo":"How it works",
       "ui.dropTitle":"Upload an image",
       "ui.dropDesc":"Drag one or more images, or tap to choose",
       "ui.choiceQ":"What do you want to do with this image?",
       "ui.reset":"↺ Load another image",
       "ui.footerLock":"Local processing",
-      "ui.footerOffline":"No image is uploaded online. You can use it offline too.",
-      "ui.footerHeic":"*HEIC files are converted to JPG during cleaning.",
-      "ui.footerAi":"The AI analysis reads metadata only: it does not detect invisible pixel watermarks (e.g. SynthID). Do not use this tool to pass AI content off as real or to strip someone else's attribution.",
       "ui.cleanedOne":"🧹 1 image cleaned on this device",
       "ui.cleanedMany":"🧹 {n} images cleaned on this device",
       "batch.title":"{n} images","batch.processing":"Processing…","batch.error":"Error",
@@ -252,8 +243,11 @@
       "alt.preview":"preview","alt.result":"clean image",
       "theme.system":"System","theme.light":"Light","theme.dark":"Dark",
       "ui.credit":"© 2026 <b>profxeni</b> · Licensed <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: copy and remix it with attribution.",
-      "ui.whySafeTitle":"Why is it safe?",
-      "ui.whySafe":"It runs in your browser, but nothing is uploaded. The page is downloaded <b>once</b>; from then on your photo is processed <b>only on your device</b>, in memory. A security rule (<code>connect-src 'none'</code>) blocks every network request, so the image can't leave, even by mistake. Proof: turn on <b>airplane mode</b> and it still works."
+      "info.safetyTitle":"Safety",
+      "info.safetyText":"It runs in your browser, but nothing is uploaded. The page is downloaded <b>once</b>; from then on your photo is processed <b>only on your device</b>, in memory. A security rule (<code>connect-src 'none'</code>) blocks every network request, so the image can't leave, even by mistake. Proof: turn on <b>airplane mode</b> and it still works.",
+      "info.heic":"*HEIC files are converted to JPG during cleaning.",
+      "info.synthTitle":"Why can't it detect SynthID?",
+      "info.synthText":"The AI analysis reads only the file's <b>metadata</b>. <b>Invisible pixel watermarks</b> (e.g. Google <b>SynthID</b> in Gemini/Imagen) <b>cannot be verified in this browser</b>: Google's official detector is required. Metadata may also have been stripped, so its absence <b>does not prove</b> an image is not AI-generated. Do not use this tool to pass AI content off as real or to strip someone else's attribution."
     }
   };
 
@@ -298,8 +292,6 @@
     if(preview) preview.alt=t("alt.preview");
     if(mImg) mImg.alt=t("alt.result");
     if(appVer) appVer.textContent="noMeta v"+APP_VERSION;
-    if(taglineEl) taglineEl.textContent=t("ui.tagline");
-    if(taglineInfoBtn){ taglineInfoBtn.textContent=t("ui.taglineInfo"); taglineInfoBtn.setAttribute("aria-label",t("ui.taglineAria")); taglineInfoBtn.title=t("ui.taglineAria"); }
     if(aiInfoBtn){ aiInfoBtn.setAttribute("aria-label",t("btn.aiInfo")); aiInfoBtn.title=t("btn.aiInfo"); }
     if(batchDownloadAll && !batchDownloadAll.disabled && batchItems.length)
       batchDownloadAll.textContent=t("batch.downloadAll",{n:batchItems.length});
@@ -330,7 +322,7 @@
         infoModal=$("infoModal"), infoBackdrop=$("infoBackdrop"), infoClose=$("infoClose"),
         batch=$("batch"), batchList=$("batchList"), batchTitle=$("batchTitle"),
         batchDownloadAll=$("batchDownloadAll"), batchReset=$("batchReset"), appVer=$("appVer"),
-        taglineEl=$("tagline"), taglineInfoBtn=$("taglineInfoBtn");
+        headerInfoBtn=$("headerInfoBtn"), footerInfoBtn=$("footerInfoBtn");
 
   let batchItems=[], batchURLs=[];
 
@@ -1106,7 +1098,9 @@
   });
   actClean.addEventListener("click",doClean);
   actAnalyze.addEventListener("click",showAnalysis);
-  taglineInfoBtn.addEventListener("click",openInfo);
+  headerInfoBtn.addEventListener("click",openInfo);
+  footerInfoBtn.addEventListener("click",openInfo);
+  footerInfoBtn.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openInfo(); } });
   aiInfoBtn.addEventListener("click",openInfo);
   mClose.addEventListener("click",closeModal);
   backdrop.addEventListener("click",closeModal);
