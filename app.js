@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.7.0
+ * @version 1.8.0
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.7.0";
+  const APP_VERSION="1.8.0";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -50,7 +50,7 @@
       "ui.h1":"Pulisci i tuoi <em>scatti</em>",
       "ui.sub":"Le foto parlano. Questo le fa tacere: niente GPS, niente dispositivo, niente tag nascosti. <b>Resta tutto con te.</b>",
       "ui.dropTitle":"Carica un'immagine",
-      "ui.dropDesc":"Trascinala qui, oppure tocca per sceglierla",
+      "ui.dropDesc":"Trascina una o più immagini, oppure tocca per sceglierle",
       "ui.choiceQ":"Cosa vuoi fare con questa immagine?",
       "ui.reset":"↺ Carica un'altra immagine",
       "ui.footerLock":"Elaborazione locale",
@@ -59,6 +59,8 @@
       "ui.footerAi":"L'analisi AI legge solo i metadati: non rileva i watermark invisibili nei pixel (es. SynthID). Non usare questo strumento per spacciare contenuti AI come reali o per rimuovere l'attribuzione altrui.",
       "ui.cleanedOne":"🧹 1 immagine ripulita su questo dispositivo",
       "ui.cleanedMany":"🧹 {n} immagini ripulite su questo dispositivo",
+      "batch.title":"{n} immagini","batch.processing":"Elaborazione…","batch.error":"Errore",
+      "batch.save":"Scarica","batch.aiBadge":"AI","batch.downloadAll":"Scarica tutte ({n})",
       "geo.viewMap":"Mappa","geo.title":"Posizione GPS",
       "geo.openOSM":"Apri in OpenStreetMap","geo.openGoogle":"Apri in Google Maps",
       "geo.copy":"Copia coordinate","geo.copied":"Copiato ✓",
@@ -127,7 +129,7 @@
       "ui.h1":"Clean your <em>shots</em>",
       "ui.sub":"Photos talk. This makes them stop: no GPS, no device, no hidden tags. <b>Everything stays with you.</b>",
       "ui.dropTitle":"Upload an image",
-      "ui.dropDesc":"Drag it here, or tap to choose",
+      "ui.dropDesc":"Drag one or more images, or tap to choose",
       "ui.choiceQ":"What do you want to do with this image?",
       "ui.reset":"↺ Load another image",
       "ui.footerLock":"Local processing",
@@ -136,6 +138,8 @@
       "ui.footerAi":"The AI analysis reads metadata only: it does not detect invisible pixel watermarks (e.g. SynthID). Do not use this tool to pass AI content off as real or to strip someone else's attribution.",
       "ui.cleanedOne":"🧹 1 image cleaned on this device",
       "ui.cleanedMany":"🧹 {n} images cleaned on this device",
+      "batch.title":"{n} images","batch.processing":"Processing…","batch.error":"Error",
+      "batch.save":"Download","batch.aiBadge":"AI","batch.downloadAll":"Download all ({n})",
       "geo.viewMap":"Map","geo.title":"GPS location",
       "geo.openOSM":"Open in OpenStreetMap","geo.openGoogle":"Open in Google Maps",
       "geo.copy":"Copy coordinates","geo.copied":"Copied ✓",
@@ -241,6 +245,9 @@
     const lb=$("langBtn"); if(lb) lb.setAttribute("aria-label", LANG==="it"?"Lingua / Language":"Language / Lingua");
     if(preview) preview.alt=t("alt.preview");
     if(mImg) mImg.alt=t("alt.result");
+    if(appVer) appVer.textContent="noMeta v"+APP_VERSION;
+    if(batchDownloadAll && !batchDownloadAll.disabled && batchItems.length)
+      batchDownloadAll.textContent=t("batch.downloadAll",{n:batchItems.length});
     applyTheme(); // riallinea l'etichetta del tema nella lingua corrente
   }
   function setLang(l){
@@ -264,7 +271,11 @@
         mActions=$("mActions"), iosHint=$("iosHint"),
         langBtn=$("langBtn"), themeBtn=$("themeBtn"), statCleaned=$("statCleaned"),
         geoModal=$("geoModal"), geoBackdrop=$("geoBackdrop"), geoClose=$("geoClose"),
-        geoTitle=$("geoTitle"), geoCoords=$("geoCoords"), geoActions=$("geoActions"), geoNote=$("geoNote");
+        geoTitle=$("geoTitle"), geoCoords=$("geoCoords"), geoActions=$("geoActions"), geoNote=$("geoNote"),
+        batch=$("batch"), batchList=$("batchList"), batchTitle=$("batchTitle"),
+        batchDownloadAll=$("batchDownloadAll"), batchReset=$("batchReset"), appVer=$("appVer");
+
+  let batchItems=[], batchURLs=[];
 
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
                 (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
@@ -682,6 +693,69 @@
     choice.style.visibility="visible";
   }
 
+  /* ====================== CARICAMENTO MULTIPLO (BATCH) ====================== */
+  // 1 file → flusso dettagliato (pulizia/analisi); 2+ file → pulizia in serie.
+  function handleFiles(fileList){
+    const list=[...fileList].filter(f=>isAllowedType(f.type) && f.size<=MAX_FILE_BYTES);
+    if(!list.length) return;
+    if(list.length===1) handleFile(list[0]); else handleBatch(list);
+  }
+
+  async function handleBatch(list){
+    drop.classList.add("hidden"); stage.classList.remove("show"); batch.classList.add("show");
+    batchTitle.textContent=t("batch.title",{n:list.length});
+    batchList.innerHTML="";
+    batchURLs.forEach(u=>URL.revokeObjectURL(u)); batchURLs=[]; batchItems=[];
+    batchDownloadAll.disabled=true; batchDownloadAll.textContent=t("batch.processing");
+    list.forEach(file=>{
+      const row=document.createElement("div"); row.className="brow";
+      row.innerHTML='<div class="bthumb"><span class="spin"></span></div>'+
+        '<div class="bmeta"><div class="bname"></div><div class="bsize">'+esc(t("batch.processing"))+'</div></div>'+
+        '<div class="bact"></div>';
+      row.querySelector(".bname").textContent=file.name;   // textContent: nome file non fidato
+      batchList.appendChild(row);
+      batchItems.push({file,row});
+    });
+    // Elaborazione in serie per non saturare la memoria (un canvas alla volta).
+    for(const it of batchItems){ await processBatchItem(it); }
+    const ready=batchItems.filter(x=>x.url).length;
+    batchDownloadAll.disabled = ready===0;
+    batchDownloadAll.textContent=t("batch.downloadAll",{n:ready});
+  }
+
+  async function processBatchItem(it){
+    const {file,row}=it;
+    const thumb=row.querySelector(".bthumb"), size=row.querySelector(".bsize"),
+          act=row.querySelector(".bact"), name=row.querySelector(".bname");
+    try{
+      const buf=await file.arrayBuffer();
+      const ai=analyzeAI(buf,file.type);
+      const cleaned=await cleanImage(file);
+      const cf=new File([cleaned.blob], renameClean(file.name,cleaned.type), {type:cleaned.type});
+      const url=URL.createObjectURL(cleaned.blob); batchURLs.push(url);
+      it.cleanedFile=cf; it.url=url;
+      const img=document.createElement("img"); img.alt=""; img.src=url;
+      thumb.innerHTML=""; thumb.appendChild(img);
+      size.textContent=fmtBytes(file.size)+" → "+fmtBytes(cleaned.blob.size);
+      if(ai.level==="detected"){
+        const b=document.createElement("span"); b.className="bbadge ai"; b.textContent=t("batch.aiBadge"); name.appendChild(b);
+      }
+      incCount();
+      const d=document.createElement("button"); d.className="bdl"; d.textContent=t("batch.save");
+      d.onclick=()=>{ const a=document.createElement("a"); a.href=url; a.download=cf.name; document.body.appendChild(a); a.click(); a.remove(); };
+      act.appendChild(d);
+    }catch(e){
+      thumb.innerHTML="⚠️"; size.textContent=t("batch.error");
+    }
+  }
+
+  function batchClear(){
+    batch.classList.remove("show"); drop.classList.remove("hidden");
+    fileInput.value="";
+    batchURLs.forEach(u=>URL.revokeObjectURL(u)); batchURLs=[]; batchItems=[];
+    batchList.innerHTML="";
+  }
+
   async function doClean(){
     if(!currentFile) return;
     choice.style.visibility="hidden";
@@ -861,8 +935,19 @@
 
   /* ====================== EVENTI ====================== */
   drop.addEventListener("click",()=>fileInput.click());
-  fileInput.addEventListener("change",e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+  fileInput.addEventListener("change",e=>{ if(e.target.files.length) handleFiles(e.target.files); });
   reset.addEventListener("click",doReset);
+  batchReset.addEventListener("click",batchClear);
+  batchDownloadAll.addEventListener("click",async()=>{
+    // "Scarica tutte": download in sequenza (nessuno zip, nessuna libreria esterna).
+    for(const it of batchItems){
+      if(it.url && it.cleanedFile){
+        const a=document.createElement("a"); a.href=it.url; a.download=it.cleanedFile.name;
+        document.body.appendChild(a); a.click(); a.remove();
+        await new Promise(r=>setTimeout(r,300));
+      }
+    }
+  });
   actClean.addEventListener("click",doClean);
   actAnalyze.addEventListener("click",showAnalysis);
   mClose.addEventListener("click",closeModal);
@@ -879,7 +964,7 @@
 
   ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
   ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
-  drop.addEventListener("drop",e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+  drop.addEventListener("drop",e=>{ if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
   window.addEventListener("paste",e=>{ const f=e.clipboardData&&e.clipboardData.files&&e.clipboardData.files[0]; if(f&&isAllowedType(f.type)) handleFile(f); });
 
   /* ====================== AVVIO ====================== */

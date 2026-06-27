@@ -2,7 +2,7 @@
 <!--
   ============================================================================
    Pulisci — Rimozione metadati & analisi origine AI
-   Versione : 1.7.0
+   Versione : 1.8.0
    Anno     : 2026
    Sviluppo : profxeni
    Licenza  : CC BY 4.0 — profxeni (copia e remix con citazione dell'autore)
@@ -214,6 +214,27 @@
   .stat{display:inline-block;margin:0 auto 12px;font-size:.82rem;font-weight:600;color:var(--accent-deep);
     background:var(--accent-soft);padding:5px 13px;border-radius:100px}
   .stat[hidden]{display:none}
+  .ver{display:inline-block;margin-top:6px;font-size:.72rem;color:var(--ink-soft);opacity:.7;letter-spacing:.02em}
+
+  /* BATCH — caricamento multiplo */
+  .batch{display:none;padding:18px}
+  .batch.show{display:block;animation:fade .4s ease}
+  .batch-head{margin-bottom:14px}
+  .batch-title{font-family:"Fraunces",serif;font-weight:500;font-size:1.15rem}
+  .batch-list{display:flex;flex-direction:column;gap:9px;margin-bottom:16px;max-height:52dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .brow{display:flex;align-items:center;gap:12px;padding:9px 11px;border:1px solid var(--line);border-radius:13px;background:var(--surface)}
+  .bthumb{flex:0 0 46px;width:46px;height:46px;border-radius:9px;overflow:hidden;background:var(--checker-bg);display:grid;place-items:center;font-size:18px}
+  .bthumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .bmeta{flex:1;min-width:0}
+  .bname{font-weight:600;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+  .bsize{font-size:.76rem;color:var(--ink-soft);margin-top:2px}
+  .bbadge{flex:0 0 auto;font-size:.62rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:1px 6px;border-radius:100px}
+  .bbadge.ai{color:var(--warn);background:var(--warn-bg)}
+  .bact{flex:0 0 auto}
+  .bdl{border:1px solid var(--clear-border);background:var(--field);color:var(--accent-deep);font-family:inherit;font-weight:600;
+    font-size:.78rem;padding:6px 11px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .bdl:hover{background:var(--surface-2)}
+  .batch-actions{display:flex;flex-direction:column;gap:10px}
   /* GPS: riga cliccabile + popup mappa */
   .m-row.geo-row{cursor:pointer;transition:border-color .2s,background .2s}
   .m-row.geo-row:hover{border-color:var(--accent)}
@@ -341,7 +362,7 @@
       <h2 data-i18n="ui.dropTitle"></h2>
       <p data-i18n="ui.dropDesc"></p>
       <div class="hint"><span>JPG</span>·<span>PNG</span>·<span>WebP</span>·<span>HEIC*</span></div>
-      <input type="file" id="file" accept="image/*" class="hidden">
+      <input type="file" id="file" accept="image/*" class="hidden" multiple>
     </div>
 
     <div class="stage" id="stage">
@@ -365,6 +386,15 @@
         </div>
       </div>
     </div>
+
+    <div class="batch" id="batch">
+      <div class="batch-head"><span class="batch-title" id="batchTitle"></span></div>
+      <div class="batch-list" id="batchList"></div>
+      <div class="batch-actions">
+        <button class="btn btn-primary" id="batchDownloadAll"></button>
+        <button class="relink" id="batchReset" data-i18n="ui.reset"></button>
+      </div>
+    </div>
   </div>
 
   <footer>
@@ -380,7 +410,8 @@
     </details>
     <small data-i18n="ui.footerHeic"></small><br>
     <small data-i18n="ui.footerAi"></small><br>
-    <small class="credit" data-i18n-html="ui.credit"></small>
+    <small class="credit" data-i18n-html="ui.credit"></small><br>
+    <small class="ver" id="appVer"></small>
   </footer>
 </div>
 
@@ -418,6 +449,6 @@
   </div>
 </div>
 
-<script src="app.js?v=1.7.0" defer></script>
+<script src="app.js?v=1.8.0" defer></script>
 </body>
 </html>
