@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.9.0
+ * @version 1.9.1
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.9.0";
+  const APP_VERSION="1.9.1";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -49,6 +49,9 @@
       "ui.badge":"100% nel tuo browser",
       "ui.h1":"Pulisci i tuoi <em>scatti</em>",
       "ui.sub":"Le foto parlano. Questo le fa tacere: niente GPS, niente dispositivo, niente tag nascosti. <b>Resta tutto con te.</b>",
+      "ui.tagline":"Analizza metadati, GPS e segnali di origine AI — tutto offline nel tuo browser.",
+      "ui.taglineInfo":"Scopri di più",
+      "ui.taglineAria":"Apri approfondimenti su cosa controlla noMeta",
       "ui.dropTitle":"Carica un'immagine",
       "ui.dropDesc":"Trascina una o più immagini, oppure tocca per sceglierle",
       "ui.choiceQ":"Cosa vuoi fare con questa immagine?",
@@ -151,6 +154,9 @@
       "ui.badge":"100% in your browser",
       "ui.h1":"Clean your <em>shots</em>",
       "ui.sub":"Photos talk. This makes them stop: no GPS, no device, no hidden tags. <b>Everything stays with you.</b>",
+      "ui.tagline":"Analyzes metadata, GPS and AI-origin signals — all offline in your browser.",
+      "ui.taglineInfo":"Learn more",
+      "ui.taglineAria":"Open details about what noMeta checks",
       "ui.dropTitle":"Upload an image",
       "ui.dropDesc":"Drag one or more images, or tap to choose",
       "ui.choiceQ":"What do you want to do with this image?",
@@ -292,6 +298,8 @@
     if(preview) preview.alt=t("alt.preview");
     if(mImg) mImg.alt=t("alt.result");
     if(appVer) appVer.textContent="noMeta v"+APP_VERSION;
+    if(taglineEl) taglineEl.textContent=t("ui.tagline");
+    if(taglineInfoBtn){ taglineInfoBtn.textContent=t("ui.taglineInfo"); taglineInfoBtn.setAttribute("aria-label",t("ui.taglineAria")); taglineInfoBtn.title=t("ui.taglineAria"); }
     if(aiInfoBtn){ aiInfoBtn.setAttribute("aria-label",t("btn.aiInfo")); aiInfoBtn.title=t("btn.aiInfo"); }
     if(batchDownloadAll && !batchDownloadAll.disabled && batchItems.length)
       batchDownloadAll.textContent=t("batch.downloadAll",{n:batchItems.length});
@@ -321,7 +329,8 @@
         geoTitle=$("geoTitle"), geoCoords=$("geoCoords"), geoActions=$("geoActions"), geoNote=$("geoNote"),
         infoModal=$("infoModal"), infoBackdrop=$("infoBackdrop"), infoClose=$("infoClose"),
         batch=$("batch"), batchList=$("batchList"), batchTitle=$("batchTitle"),
-        batchDownloadAll=$("batchDownloadAll"), batchReset=$("batchReset"), appVer=$("appVer");
+        batchDownloadAll=$("batchDownloadAll"), batchReset=$("batchReset"), appVer=$("appVer"),
+        taglineEl=$("tagline"), taglineInfoBtn=$("taglineInfoBtn");
 
   let batchItems=[], batchURLs=[];
 
@@ -1097,6 +1106,7 @@
   });
   actClean.addEventListener("click",doClean);
   actAnalyze.addEventListener("click",showAnalysis);
+  taglineInfoBtn.addEventListener("click",openInfo);
   aiInfoBtn.addEventListener("click",openInfo);
   mClose.addEventListener("click",closeModal);
   backdrop.addEventListener("click",closeModal);

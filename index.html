@@ -2,7 +2,7 @@
 <!--
   ============================================================================
    Pulisci — Rimozione metadati & analisi origine AI
-   Versione : 1.9.0
+   Versione : 1.9.1
    Anno     : 2026
    Sviluppo : profxeni
    Licenza  : CC BY 4.0 — profxeni (copia e remix con citazione dell'autore)
@@ -140,6 +140,12 @@
     animation:sheen 6s ease-in-out infinite}
   @keyframes sheen{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
   .sub{color:var(--ink-soft);font-size:1.02rem;margin-top:12px;max-width:32ch;margin-inline:auto}
+  /* Tagline + info icon sotto il sottotitolo */
+  .tagline-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;max-width:44ch;margin-inline:auto}
+  .tagline{font-size:.84rem;color:var(--ink-soft);line-height:1.45;text-align:center}
+  .tagline-info{flex:0 0 auto;width:26px;height:26px;border:none;border-radius:50%;background:var(--accent-soft);color:var(--accent-deep);font-size:.82rem;cursor:pointer;display:grid;place-items:center;transition:background .2s,transform .15s;-webkit-tap-highlight-color:transparent}
+  .tagline-info:hover{background:var(--accent);color:#fff}
+  .tagline-info:active{transform:scale(.92)}
   /* Brand / hero lockup — "n" + diaframma (la "o") + "Meta".
      n/Meta seguono il tema (var(--ink)); il diaframma resta blu (var(--accent)). */
   .brand{display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px}
@@ -391,6 +397,10 @@
     <h1 data-i18n-html="ui.h1"></h1>
     <span class="badge"><span class="dot"></span><span data-i18n="ui.badge"></span></span>
     <p class="sub" data-i18n-html="ui.sub"></p>
+    <div class="tagline-row">
+      <span class="tagline" id="tagline"></span>
+      <button class="tagline-info" id="taglineInfoBtn" type="button" aria-label="Apri approfondimenti">ℹ</button>
+    </div>
   </header>
 
   <div class="card">
@@ -542,6 +552,6 @@
   </div>
 </div>
 
-<script src="app.js?v=1.9.0" defer></script>
+<script src="app.js?v=1.9.1" defer></script>
 </body>
 </html>
