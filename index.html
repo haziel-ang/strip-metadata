@@ -2,7 +2,7 @@
 <!--
   ============================================================================
    Pulisci — Rimozione metadati & analisi origine AI
-   Versione : 1.8.0
+   Versione : 1.9.0
    Anno     : 2026
    Sviluppo : profxeni
    Licenza  : CC BY 4.0 — profxeni (copia e remix con citazione dell'autore)
@@ -308,6 +308,12 @@
   .choice{display:flex;flex-direction:column;gap:10px;text-align:center}
   .choice-q{font-family:"Fraunces",serif;font-weight:500;font-size:1.15rem;margin-bottom:4px}
   .choice .sublabel{font-size:.8rem;color:var(--ink-soft);font-weight:500;margin-top:-4px}
+  .analyze-row{display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:10px;align-items:stretch}
+  .info-dot{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--clear-border);background:var(--field);
+    color:var(--accent-deep);font-family:"Fraunces",serif;font-size:1.18rem;font-weight:600;cursor:pointer;
+    display:grid;place-items:center;box-shadow:none;-webkit-tap-highlight-color:transparent;transition:background .2s,transform .15s}
+  .info-dot:hover{background:var(--surface-2)}
+  .info-dot:active{transform:scale(.96)}
   .btn-outline{background:var(--field);color:var(--accent-deep);border:1.5px solid var(--clear-border)}
   .btn-outline:hover{background:var(--surface-2)}
 
@@ -326,6 +332,41 @@
   .ai-why{max-width:none;margin:6px 0 18px}
   .ai-why summary{text-align:left}
   .pill.ai{color:var(--maybe-ink);background:var(--maybe-bg)}
+
+  /* INFO POPUP */
+  .info-card{width:min(720px,calc(100vw - 32px));max-width:720px;max-height:calc(100dvh - 32px);
+    padding:0;overflow:hidden;display:flex;flex-direction:column}
+  .info-card .modal-head{padding:22px 58px 18px 22px;margin-bottom:0;border-bottom:1px solid var(--line)}
+  .info-card .modal-head .ok{font-family:"Fraunces",serif;font-size:1.1rem;font-weight:600;color:#fff}
+  .info-scroll{padding:18px 22px 22px;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0}
+  .info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+  .info-panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px}
+  .info-panel h4{font-family:"Fraunces",serif;font-weight:500;font-size:1rem;margin-bottom:8px;line-height:1.2}
+  .info-panel ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+  .info-panel li{position:relative;padding-left:17px;font-size:.84rem;color:var(--ink-soft);line-height:1.45}
+  .info-panel li::before{content:"";position:absolute;left:0;top:.63em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .info-privacy{margin:2px 0 12px;padding:12px 13px;border-radius:13px;border:1px solid var(--clear-border);
+    background:var(--clear-bg);font-size:.86rem;color:var(--ink-soft);line-height:1.5}
+  .info-deep{margin:0}
+  .info-deep summary{display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--accent-deep);font-size:.88rem;font-weight:700}
+  .info-deep summary::-webkit-details-marker{display:none}
+  .info-deep summary::before{content:"i";width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+    background:var(--accent-soft);color:var(--accent-deep);font-family:"Fraunces",serif;font-size:.9rem}
+  .info-deep p{font-size:.84rem;color:var(--ink-soft);line-height:1.55;margin-top:9px;background:var(--surface);
+    border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:11px 13px}
+
+  @media (max-width:520px){
+    body{padding-left:14px;padding-right:14px}
+    .modal-card{width:calc(100vw - 20px);max-height:calc(100dvh - 20px);border-radius:20px;padding:18px}
+    .info-card{width:calc(100vw - 20px);max-height:calc(100dvh - 20px);padding:0}
+    .info-card .modal-head{padding:18px 54px 15px 18px}
+    .info-scroll{padding:14px 16px 18px}
+    .info-grid{grid-template-columns:1fr}
+    .analyze-row{grid-template-columns:minmax(0,1fr) 44px}
+    .info-dot{width:44px;height:44px}
+    .batch-list{max-height:48dvh}
+    .img-box img{max-height:36dvh}
+  }
 </style>
 </head>
 <body>
@@ -377,10 +418,13 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l4-1 11-11-3-3L4 17l-1 4z"/><path d="M14 6l3 3"/></svg>
             <span data-i18n="btn.clean"></span>
           </button>
-          <button class="btn btn-outline" id="actAnalyze">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
-            <span data-i18n="btn.analyze"></span>
-          </button>
+          <div class="analyze-row">
+            <button class="btn btn-outline" id="actAnalyze">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+              <span data-i18n="btn.analyze"></span>
+            </button>
+            <button class="info-dot" id="aiInfoBtn" type="button" aria-label="Info analisi AI" title="Info analisi AI">i</button>
+          </div>
           <span class="sublabel" id="choiceHint"></span>
           <button class="relink" id="reset" data-i18n="ui.reset"></button>
         </div>
@@ -435,6 +479,55 @@
   </div>
 </div>
 
+<!-- AI INFO POPUP -->
+<div class="modal" id="infoModal" aria-hidden="true">
+  <div class="modal-backdrop" id="infoBackdrop"></div>
+  <div class="modal-card info-card" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <button class="modal-close" id="infoClose" aria-label="Chiudi">×</button>
+    <div class="modal-head">
+      <div class="ok">i</div>
+      <div><h3 id="infoTitle" data-i18n="info.title"></h3><p data-i18n="info.sub"></p></div>
+    </div>
+    <div class="info-scroll">
+      <div class="info-grid">
+        <section class="info-panel">
+          <h4 data-i18n="info.detectTitle"></h4>
+          <ul>
+            <li data-i18n="info.detect1"></li>
+            <li data-i18n="info.detect2"></li>
+            <li data-i18n="info.detect3"></li>
+            <li data-i18n="info.detect4"></li>
+          </ul>
+        </section>
+        <section class="info-panel">
+          <h4 data-i18n="info.cleanTitle"></h4>
+          <ul>
+            <li data-i18n="info.clean1"></li>
+            <li data-i18n="info.clean2"></li>
+            <li data-i18n="info.clean3"></li>
+          </ul>
+        </section>
+        <section class="info-panel">
+          <h4 data-i18n="info.limitsTitle"></h4>
+          <ul>
+            <li data-i18n="info.limit1"></li>
+            <li data-i18n="info.limit2"></li>
+            <li data-i18n="info.limit3"></li>
+          </ul>
+        </section>
+        <section class="info-panel">
+          <h4 data-i18n="info.privacyTitle"></h4>
+          <p class="info-privacy" data-i18n="info.privacy"></p>
+          <details class="info-deep">
+            <summary data-i18n="info.deepTitle"></summary>
+            <p data-i18n="info.deep"></p>
+          </details>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- GPS MAP POPUP -->
 <div class="modal" id="geoModal" aria-hidden="true">
   <div class="modal-backdrop" id="geoBackdrop"></div>
@@ -449,6 +542,6 @@
   </div>
 </div>
 
-<script src="app.js?v=1.8.0" defer></script>
+<script src="app.js?v=1.9.0" defer></script>
 </body>
 </html>

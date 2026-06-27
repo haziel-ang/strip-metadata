@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.8.0
+ * @version 1.9.0
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.8.0";
+  const APP_VERSION="1.9.0";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -65,7 +65,7 @@
       "geo.openOSM":"Apri in OpenStreetMap","geo.openGoogle":"Apri in Google Maps",
       "geo.copy":"Copia coordinate","geo.copied":"Copiato ✓",
       "geo.note":"Il pulsante apre una mappa esterna in una nuova scheda: la posizione verrà condivisa con quel servizio. La pagina, di per sé, non invia nulla.",
-      "btn.clean":"Pulisci i metadati","btn.analyze":"Analizza immagine",
+      "btn.clean":"Pulisci i metadati","btn.analyze":"Analizza immagine","btn.aiInfo":"Info analisi AI",
       "btn.download":"Scarica immagine pulita","btn.share":"Condividi",
       "btn.saveShare":"Salva / Condividi","btn.fullscreen":"Apri a schermo intero",
       "chip.analyzing":"Analisi…","chip.cleaning":"Rimozione metadati…",
@@ -103,7 +103,7 @@
       "verdict.clear.p":"Non risultano credenziali C2PA, etichette IPTC né nomi di generatori AI nei metadati del file.",
       "ai.pill.strong":"AI","ai.pill.weak":"indizio",
       "ai.c2pa.k":"Credenziali di provenienza C2PA",
-      "ai.c2pa.v":"Manifest Content Credentials incorporato (dichiara origine/cronologia, usato per marcare contenuti AI)",
+      "ai.c2pa.v":"Manifest Content Credentials incorporato: dichiara origine/cronologia; diventa forte se contiene azioni o sorgenti AI",
       "ai.iptc.k":"Etichetta IPTC di origine digitale",
       "ai.dst.composite":"Composito con elementi generati da AI (IPTC)",
       "ai.dst.trained":"Generata da AI addestrata — IPTC trainedAlgorithmicMedia",
@@ -112,12 +112,35 @@
       "ai.iptcPresent.k":"Campo IPTC DigitalSourceType presente",
       "ai.iptcPresent.v":"presente, ma con valore non riconosciuto come AI",
       "ai.gen.k":"Software/generatore AI nei metadati",
+      "ai.workflow.k":"Workflow o parametri generativi",
+      "ai.workflow.v":"prompt/seed/modello/sampler o workflow compatibili con generatori AI",
+      "ai.compressed.k":"Metadati testuali compressi",
+      "ai.compressed.v":"il file contiene un blocco testuale compresso con keyword sospetta; il browser lo segnala ma non lo decomprime offline",
       "ai.phrase.k":"Dichiarazione testuale nei metadati",
       "ai.action.k":"Azione dichiarata nel manifest C2PA",
       "ai.action.created":"immagine generata da AI (c2pa.created)",
       "ai.action.edited":"foto modificata/composita con AI (c2pa.edited / placed)",
       "ai.noteTitle":"Perché non rileva SynthID?",
       "ai.note":"Questa analisi legge solo i <b>metadati</b> del file. I <b>watermark invisibili nei pixel</b> (es. Google <b>SynthID</b> di Gemini/Imagen) <b>non sono verificabili in questo browser</b>: serve il rilevatore ufficiale di Google. I metadati inoltre possono essere stati rimossi, quindi la loro assenza <b>non prova</b> che un'immagine non sia generata da AI.",
+      "info.title":"Cosa controlla davvero",
+      "info.sub":"Lettura locale dei metadati: cerca prove tecniche, non giudica i pixel.",
+      "info.detectTitle":"Rilevamento AI",
+      "info.detect1":"C2PA / Content Credentials in JPEG, PNG e WebP, incluse azioni come c2pa.created e c2pa.edited.",
+      "info.detect2":"IPTC DigitalSourceType, compresi trainedAlgorithmicMedia e compositeWithTrainedAlgorithmicMedia.",
+      "info.detect3":"XMP, EXIF Software e blocchi testuali PNG/WebP con nomi di generatori o workflow.",
+      "info.detect4":"Parametri tipici di Stable Diffusion, ComfyUI, A1111, Fooocus, InvokeAI, FLUX e simili: prompt, seed, sampler, model hash, CFG, steps.",
+      "info.cleanTitle":"Pulizia",
+      "info.clean1":"Riesporta i pixel via canvas e rimuove EXIF, XMP, IPTC, ICC e manifest C2PA quando il formato lo consente.",
+      "info.clean2":"Nei JPEG elimina anche i marker APP/COM reinseriti dal browser, mantenendo il file scaricabile e pulito.",
+      "info.clean3":"Con più immagini lavora in serie, una alla volta, senza zip e senza librerie esterne.",
+      "info.limitsTitle":"Limiti onesti",
+      "info.limit1":"Non verifica watermark invisibili nei pixel come SynthID: servono rilevatori ufficiali esterni.",
+      "info.limit2":"Metadati assenti o ripuliti non provano che l'immagine non sia AI.",
+      "info.limit3":"I metadati possono essere falsificati: il verdetto è un indizio tecnico, non una perizia.",
+      "info.privacyTitle":"Privacy",
+      "info.privacy":"Tutto avviene nel browser. La CSP blocca le richieste di rete: l'immagine non viene caricata online.",
+      "info.deepTitle":"Approfondimento",
+      "info.deep":"La confidenza sale quando il file dichiara origine AI tramite C2PA/IPTC, quando compaiono generatori noti, o quando trova una combinazione coerente di prompt, seed, modello, sampler e passi. Un singolo campo generico pesa meno; più segnali indipendenti rendono il risultato più affidabile.",
       "alt.preview":"anteprima","alt.result":"immagine pulita",
       "theme.system":"Sistema","theme.light":"Chiaro","theme.dark":"Scuro",
       "ui.credit":"© 2026 <b>profxeni</b> · Licenza <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: puoi copiarla e modificarla citando l'autore.",
@@ -144,7 +167,7 @@
       "geo.openOSM":"Open in OpenStreetMap","geo.openGoogle":"Open in Google Maps",
       "geo.copy":"Copy coordinates","geo.copied":"Copied ✓",
       "geo.note":"The button opens an external map in a new tab: the location will be shared with that service. The page itself sends nothing.",
-      "btn.clean":"Clean metadata","btn.analyze":"Analyze image",
+      "btn.clean":"Clean metadata","btn.analyze":"Analyze image","btn.aiInfo":"AI analysis info",
       "btn.download":"Download clean image","btn.share":"Share",
       "btn.saveShare":"Save / Share","btn.fullscreen":"Open fullscreen",
       "chip.analyzing":"Analyzing…","chip.cleaning":"Removing metadata…",
@@ -182,7 +205,7 @@
       "verdict.clear.p":"No C2PA credentials, IPTC labels or AI generator names were found in the file's metadata.",
       "ai.pill.strong":"AI","ai.pill.weak":"hint",
       "ai.c2pa.k":"C2PA provenance credentials",
-      "ai.c2pa.v":"Embedded Content Credentials manifest (declares origin/history, used to mark AI content)",
+      "ai.c2pa.v":"Embedded Content Credentials manifest: declares origin/history; strong when it includes AI actions or sources",
       "ai.iptc.k":"IPTC digital source type label",
       "ai.dst.composite":"Composite with AI-generated elements (IPTC)",
       "ai.dst.trained":"Generated by trained AI — IPTC trainedAlgorithmicMedia",
@@ -191,12 +214,35 @@
       "ai.iptcPresent.k":"IPTC DigitalSourceType field present",
       "ai.iptcPresent.v":"present, but with a value not recognized as AI",
       "ai.gen.k":"AI software/generator in metadata",
+      "ai.workflow.k":"Generative workflow or parameters",
+      "ai.workflow.v":"prompt/seed/model/sampler or workflow fields compatible with AI generators",
+      "ai.compressed.k":"Compressed text metadata",
+      "ai.compressed.v":"the file contains a compressed text block with a suspicious keyword; the browser flags it but does not decompress it offline",
       "ai.phrase.k":"Text declaration in metadata",
       "ai.action.k":"Declared action in the C2PA manifest",
       "ai.action.created":"AI-generated image (c2pa.created)",
       "ai.action.edited":"AI-edited / composite photo (c2pa.edited / placed)",
       "ai.noteTitle":"Why can't it detect SynthID?",
       "ai.note":"This analysis reads only the file's <b>metadata</b>. <b>Invisible pixel watermarks</b> (e.g. Google <b>SynthID</b> in Gemini/Imagen) <b>cannot be verified in this browser</b>: Google's official detector is required. Metadata may also have been stripped, so its absence <b>does not prove</b> an image is not AI-generated.",
+      "info.title":"What it really checks",
+      "info.sub":"A local metadata read: useful for technical evidence, not a pixel judgment.",
+      "info.detectTitle":"AI detection",
+      "info.detect1":"C2PA / Content Credentials in JPEG, PNG and WebP, including actions such as c2pa.created and c2pa.edited.",
+      "info.detect2":"IPTC DigitalSourceType, including trainedAlgorithmicMedia and compositeWithTrainedAlgorithmicMedia.",
+      "info.detect3":"XMP, EXIF Software and PNG/WebP text blocks containing generator names or workflows.",
+      "info.detect4":"Stable Diffusion, ComfyUI, A1111, Fooocus, InvokeAI, FLUX-like parameters: prompt, seed, sampler, model hash, CFG, steps.",
+      "info.cleanTitle":"Cleaning",
+      "info.clean1":"Re-exports pixels through canvas and removes EXIF, XMP, IPTC, ICC and C2PA manifests when the format allows it.",
+      "info.clean2":"For JPEG, it also strips APP/COM markers that the browser encoder may reinsert, while keeping the file downloadable and clean.",
+      "info.clean3":"For multiple images, it works sequentially, one image at a time, with no zip file and no external library.",
+      "info.limitsTitle":"Honest limits",
+      "info.limit1":"It does not verify invisible pixel watermarks such as SynthID: official external detectors are required.",
+      "info.limit2":"Missing or stripped metadata does not prove that an image is not AI-generated.",
+      "info.limit3":"Metadata can be forged: the verdict is a technical clue, not a forensic ruling.",
+      "info.privacyTitle":"Privacy",
+      "info.privacy":"Everything runs in the browser. The CSP blocks network requests: the image is not uploaded online.",
+      "info.deepTitle":"Deep dive",
+      "info.deep":"Confidence rises when the file declares AI origin through C2PA/IPTC, when known generator names appear, or when it finds a coherent combination of prompt, seed, model, sampler and steps. A single generic field weighs less; multiple independent signals make the result more reliable.",
       "alt.preview":"preview","alt.result":"clean image",
       "theme.system":"System","theme.light":"Light","theme.dark":"Dark",
       "ui.credit":"© 2026 <b>profxeni</b> · Licensed <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: copy and remix it with attribution.",
@@ -246,6 +292,7 @@
     if(preview) preview.alt=t("alt.preview");
     if(mImg) mImg.alt=t("alt.result");
     if(appVer) appVer.textContent="noMeta v"+APP_VERSION;
+    if(aiInfoBtn){ aiInfoBtn.setAttribute("aria-label",t("btn.aiInfo")); aiInfoBtn.title=t("btn.aiInfo"); }
     if(batchDownloadAll && !batchDownloadAll.disabled && batchItems.length)
       batchDownloadAll.textContent=t("batch.downloadAll",{n:batchItems.length});
     applyTheme(); // riallinea l'etichetta del tema nella lingua corrente
@@ -262,7 +309,7 @@
   /* ====================== ELEMENTI ====================== */
   const drop=$("drop"), fileInput=$("file"), stage=$("stage"), frame=$("frame"),
         preview=$("preview"), chip=$("chip"), chiptx=$("chiptx"),
-        choice=$("choice"), actClean=$("actClean"), actAnalyze=$("actAnalyze"),
+        choice=$("choice"), actClean=$("actClean"), actAnalyze=$("actAnalyze"), aiInfoBtn=$("aiInfoBtn"),
         choiceHint=$("choiceHint"), reset=$("reset"),
         modal=$("modal"), backdrop=$("backdrop"), mClose=$("mClose"),
         mImg=$("mImg"), mTitle=$("mTitle"), mSub=$("mSub"), mSizes=$("mSizes"),
@@ -272,6 +319,7 @@
         langBtn=$("langBtn"), themeBtn=$("themeBtn"), statCleaned=$("statCleaned"),
         geoModal=$("geoModal"), geoBackdrop=$("geoBackdrop"), geoClose=$("geoClose"),
         geoTitle=$("geoTitle"), geoCoords=$("geoCoords"), geoActions=$("geoActions"), geoNote=$("geoNote"),
+        infoModal=$("infoModal"), infoBackdrop=$("infoBackdrop"), infoClose=$("infoClose"),
         batch=$("batch"), batchList=$("batchList"), batchTitle=$("batchTitle"),
         batchDownloadAll=$("batchDownloadAll"), batchReset=$("batchReset"), appVer=$("appVer");
 
@@ -467,9 +515,61 @@
      etichetta IPTC DigitalSourceType, marcatori XMP e nomi di generatori AI.
      NON rileva i watermark invisibili nei pixel come Google SynthID. */
   function aiScan(buf,type){
-    const view=new DataView(buf), bytes=[]; const flags={c2paBox:false};
-    // Non accumuliamo più di MAX_SCAN_BYTES (anti-DoS).
-    function push(start,end){ for(let i=start;i<end&&i<view.byteLength&&bytes.length<MAX_SCAN_BYTES;i++) bytes.push(view.getUint8(i)); }
+    const view=new DataView(buf), parts=[];
+    const flags={c2paBox:false,compressedTextKeys:[]};
+    let scanned=0;
+    function addText(s){
+      if(!s) return;
+      parts.push(String(s).slice(0,MAX_SCAN_BYTES));
+    }
+    function decodeBytes(u8){
+      const out=[];
+      function add(s){
+        if(!s) return;
+        // Tieni solo stringhe con una minima densità di caratteri leggibili.
+        const readable=(s.match(/[A-Za-z0-9:_./ -]/g)||[]).length;
+        if(readable>=3) out.push(s.replace(/\u0000/g," "));
+      }
+      try{ add(new TextDecoder("latin1").decode(u8)); }catch(e){}
+      try{ add(new TextDecoder("utf-8").decode(u8)); }catch(e){}
+      if(u8.length>3){
+        try{ add(new TextDecoder("utf-16le").decode(u8)); }catch(e){}
+        try{ add(new TextDecoder("utf-16be").decode(u8)); }catch(e){}
+      }
+      return out.join("\n");
+    }
+    function push(start,end){
+      if(scanned>=MAX_SCAN_BYTES) return;
+      start=Math.max(0,start); end=Math.min(end,view.byteLength);
+      const take=Math.min(end-start,MAX_SCAN_BYTES-scanned);
+      if(take<=0) return;
+      addText(decodeBytes(new Uint8Array(buf,start,take)));
+      scanned+=take;
+    }
+    function zero(start,end){ for(let i=start;i<end;i++) if(view.getUint8(i)===0) return i; return -1; }
+    function textRange(start,end){ return decodeBytes(new Uint8Array(buf,start,Math.max(0,end-start))).trim(); }
+    function readPngText(kind,ps,len){
+      const end=Math.min(ps+len,view.byteLength), z=zero(ps,end);
+      const key=z>ps ? textRange(ps,z).trim() : "";
+      if(kind==="tEXt" && z>ps){ addText(key+" "+textRange(z+1,end)); return; }
+      if(kind==="zTXt" && z>ps){
+        if(/prompt|parameters|workflow|comfy|stable|generation/i.test(key)) flags.compressedTextKeys.push(key);
+        addText(key+" zTXt compressed text metadata");
+        return;
+      }
+      if(kind==="iTXt" && z>ps && z+3<end){
+        const compressed=view.getUint8(z+1)===1;
+        let p=z+3; // compression flag + method
+        const langEnd=zero(p,end); if(langEnd<0) return;
+        p=langEnd+1;
+        const translatedEnd=zero(p,end); if(translatedEnd<0) return;
+        p=translatedEnd+1;
+        if(compressed){
+          if(/prompt|parameters|workflow|comfy|stable|generation/i.test(key)) flags.compressedTextKeys.push(key);
+          addText(key+" iTXt compressed text metadata");
+        }else addText(key+" "+textRange(p,end));
+      }
+    }
     try{
       if(type==="image/jpeg"){
         let off=2;
@@ -487,10 +587,12 @@
         }
       }else if(type==="image/png"){
         let off=8;
-        while(off<view.byteLength){
+        while(off+12<=view.byteLength){
           const len=view.getUint32(off);
           let tt="";for(let i=0;i<4;i++)tt+=String.fromCharCode(view.getUint8(off+4+i));
-          if(["tEXt","iTXt","zTXt","eXIf","iCCP","caBX"].includes(tt)) push(off+8, off+8+len);
+          const ps=off+8;
+          if(["tEXt","iTXt","zTXt"].includes(tt)) readPngText(tt,ps,len);
+          else if(["eXIf","iCCP","caBX"].includes(tt)) push(ps, ps+len);
           if(tt==="caBX") flags.c2paBox=true; // chunk privato C2PA
           if(tt==="IEND") break;
           off+=12+len;
@@ -508,10 +610,8 @@
         }
       }
     }catch(e){}
-    let s="";
-    try{ s=new TextDecoder("latin1").decode(Uint8Array.from(bytes)); }
-    catch(e){ for(let i=0;i<bytes.length;i++) s+=String.fromCharCode(bytes[i]); }
-    return {text:s, lower:s.toLowerCase(), flags};
+    const text=parts.join("\n");
+    return {text, lower:text.toLowerCase(), flags};
   }
 
   function analyzeAI(buf,type){
@@ -522,10 +622,14 @@
     const hasC2PA = scan.flags.c2paBox || lower.includes("c2pa") || lower.includes("contentauth")
                  || lower.includes("content credential") || lower.includes("contentcredentials");
     if(hasC2PA){
-      strong=true; signals.push({strong:true,ico:"🔏",kKey:"ai.c2pa.k",vKey:"ai.c2pa.v"});
-      if(lower.includes("c2pa.edited") || lower.includes("c2pa.placed"))
+      const c2paEdited=lower.includes("c2pa.edited") || lower.includes("c2pa.placed");
+      const c2paCreated=lower.includes("c2pa.created");
+      const c2paStrong=c2paEdited||c2paCreated;
+      if(c2paStrong) strong=true; else maybe=true;
+      signals.push({strong:c2paStrong,ico:"🔏",kKey:"ai.c2pa.k",vKey:"ai.c2pa.v"});
+      if(c2paEdited)
         signals.push({strong:true,ico:"✏️",kKey:"ai.action.k",vKey:"ai.action.edited"});
-      else if(lower.includes("c2pa.created"))
+      else if(c2paCreated)
         signals.push({strong:true,ico:"✨",kKey:"ai.action.k",vKey:"ai.action.created"});
     }
 
@@ -545,21 +649,45 @@
 
     // 3) Nomi di software/generatori AI nei metadati (substring, come fanno i detector reali) → segnale forte.
     const gens=[
-      ["chatgpt","ChatGPT (OpenAI)"],["openai","OpenAI"],["azure openai","Azure OpenAI"],
-      ["dall·e","DALL·E"],["dall-e","DALL·E"],["gpt-image","GPT-image (OpenAI)"],["gpt-4o","GPT-4o (OpenAI)"],["sora","Sora (OpenAI)"],
+      ["azure openai","Azure OpenAI"],["chatgpt","ChatGPT (OpenAI)"],["openai","OpenAI"],
+      ["dall·e","DALL·E"],["dall-e","DALL·E"],["dalle","DALL·E"],["gpt-image","GPT-image (OpenAI)"],["gpt-4o","GPT-4o (OpenAI)"],["sora","Sora (OpenAI)"],
       ["google c2pa","Google (C2PA)"],["made with google ai","Google AI"],["nano banana","Gemini 2.5 Flash Image (nano banana)"],["gemini","Google Gemini"],["imagen","Google Imagen"],
       ["adobe firefly","Adobe Firefly"],["firefly","Adobe Firefly"],
       ["bing image creator","Bing Image Creator"],["microsoft designer","Microsoft Designer"],
-      ["midjourney","Midjourney"],["stable diffusion","Stable Diffusion"],["stablediffusion","Stable Diffusion"],["automatic1111","Stable Diffusion (A1111)"],["comfyui","ComfyUI"],
-      ["leonardo.ai","Leonardo.Ai"],["ideogram","Ideogram"],["nightcafe","NightCafe"],["recraft","Recraft"],["novelai","NovelAI"],
-      ["flux.1","FLUX"],["black forest labs","FLUX (Black Forest Labs)"],["grok","Grok (xAI)"],["qwen image","Qwen Image"],["seedream","Seedream"]
+      ["midjourney","Midjourney"],["nijijourney","NijiJourney"],
+      ["stable diffusion","Stable Diffusion"],["stablediffusion","Stable Diffusion"],["sdxl","Stable Diffusion XL"],["sd3","Stable Diffusion 3"],
+      ["automatic1111","Stable Diffusion (A1111)"],["a1111","Stable Diffusion (A1111)"],["forge webui","Stable Diffusion WebUI Forge"],
+      ["comfyui","ComfyUI"],["fooocus","Fooocus"],["invokeai","InvokeAI"],["invoke ai","InvokeAI"],["sdnext","SD.Next"],
+      ["leonardo.ai","Leonardo.Ai"],["leonardo ai","Leonardo.Ai"],["ideogram","Ideogram"],["nightcafe","NightCafe"],["recraft","Recraft"],["novelai","NovelAI"],["nai diffusion","NovelAI"],
+      ["flux.1","FLUX"],["black forest labs","FLUX (Black Forest Labs)"],["stability ai","Stability AI"],["stability.ai","Stability AI"],
+      ["grok","Grok (xAI)"],["qwen image","Qwen Image"],["seedream","Seedream"],["krea ai","Krea AI"],["canva magic media","Canva Magic Media"],["playground ai","Playground AI"]
     ];
     const foundGens=[];
     for(const [tok,label] of gens){ if(lower.includes(tok)&&!foundGens.includes(label)) foundGens.push(label); }
-    // Parametri di generazione tipici (tEXt) di Stable Diffusion / ComfyUI.
-    if(lower.includes("sampler:") && lower.includes("steps:") && !foundGens.includes("Stable Diffusion")) foundGens.push("Stable Diffusion");
-    if((lower.includes('"class_type"')||lower.includes("comfyui")) && !foundGens.includes("ComfyUI")) foundGens.push("ComfyUI");
+    // Parametri di generazione tipici (tEXt/iTXt/XMP) di Stable Diffusion / ComfyUI.
+    if((lower.includes("sampler:") && lower.includes("steps:")) || (lower.includes("cfg scale") && lower.includes("seed:")))
+      if(!foundGens.includes("Stable Diffusion")) foundGens.push("Stable Diffusion");
+    if((lower.includes('"class_type"')||lower.includes('"workflow"')||lower.includes("comfyui")) && !foundGens.includes("ComfyUI")) foundGens.push("ComfyUI");
     if(foundGens.length){ strong=true; signals.push({strong:true,ico:"🤖",kKey:"ai.gen.k",vRaw:foundGens.join(", ")}); }
+
+    const workflowHits=[];
+    function addHit(label,tests){ if(tests.some(x=>lower.includes(x))&&!workflowHits.includes(label)) workflowHits.push(label); }
+    addHit("prompt",["prompt:","negative prompt","positive prompt",'"prompt"',"parameters"]);
+    addHit("seed",["seed:"," seed ","seed=",'"seed"']);
+    addHit("sampler",["sampler:","sampler_name",'"sampler"']);
+    addHit("model",["model hash","model_hash","model:","model_name",'"checkpoint"',".safetensors"]);
+    addHit("steps",["steps:","num_inference_steps",'"steps"']);
+    addHit("cfg",["cfg scale","cfg_scale","guidance_scale"]);
+    addHit("workflow",['"class_type"','"workflow"',"comfyui","node graph"]);
+    const hasPrompt=workflowHits.includes("prompt");
+    const hasGenerationParams=workflowHits.some(x=>["seed","sampler","model","steps","cfg","workflow"].includes(x));
+    if((hasPrompt&&hasGenerationParams) || workflowHits.includes("workflow") || (workflowHits.includes("sampler")&&workflowHits.includes("steps"))){
+      strong=true;
+      signals.push({strong:true,ico:"🧩",kKey:"ai.workflow.k",vRaw:workflowHits.join(", ") || t("ai.workflow.v")});
+    }else if(scan.flags.compressedTextKeys.length){
+      maybe=true;
+      signals.push({ico:"🗜️",kKey:"ai.compressed.k",vKey:"ai.compressed.v"});
+    }
 
     // 4) Dichiarazioni testuali esplicite.
     const phrases=[["made with ai","“Made with AI”"],["ai generated","“AI generated”"],["generated by ai","“Generated by AI”"],["created with ai","“Created with AI”"],["ai generated image","“AI Generated Image”"]];
@@ -897,7 +1025,11 @@
   function iconShare(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v13M12 3l-4 4M12 3l4 4"/></svg>';}
 
   function openModal(){ modal.classList.add("open"); modal.setAttribute("aria-hidden","false"); document.body.classList.add("lock"); }
-  function closeModal(){ modal.classList.remove("open"); modal.setAttribute("aria-hidden","true"); document.body.classList.remove("lock"); }
+  function closeModal(){
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden","true");
+    if(!geoModal.classList.contains("open") && !infoModal.classList.contains("open")) document.body.classList.remove("lock");
+  }
 
   /* Popup mappa GPS: mostra le coordinate e offre l'apertura di una mappa
      ESTERNA in una nuova scheda (solo su clic). La pagina non fa richieste. */
@@ -922,7 +1054,22 @@
     geoActions.appendChild(cp);
     geoModal.classList.add("open"); geoModal.setAttribute("aria-hidden","false"); document.body.classList.add("lock");
   }
-  function closeGeo(){ geoModal.classList.remove("open"); geoModal.setAttribute("aria-hidden","true"); if(!modal.classList.contains("open")) document.body.classList.remove("lock"); }
+  function closeGeo(){
+    geoModal.classList.remove("open");
+    geoModal.setAttribute("aria-hidden","true");
+    if(!modal.classList.contains("open") && !infoModal.classList.contains("open")) document.body.classList.remove("lock");
+  }
+
+  function openInfo(){
+    infoModal.classList.add("open");
+    infoModal.setAttribute("aria-hidden","false");
+    document.body.classList.add("lock");
+  }
+  function closeInfo(){
+    infoModal.classList.remove("open");
+    infoModal.setAttribute("aria-hidden","true");
+    if(!modal.classList.contains("open") && !geoModal.classList.contains("open")) document.body.classList.remove("lock");
+  }
 
   function doReset(){
     closeModal();
@@ -950,13 +1097,17 @@
   });
   actClean.addEventListener("click",doClean);
   actAnalyze.addEventListener("click",showAnalysis);
+  aiInfoBtn.addEventListener("click",openInfo);
   mClose.addEventListener("click",closeModal);
   backdrop.addEventListener("click",closeModal);
   geoClose.addEventListener("click",closeGeo);
   geoBackdrop.addEventListener("click",closeGeo);
+  infoClose.addEventListener("click",closeInfo);
+  infoBackdrop.addEventListener("click",closeInfo);
   document.addEventListener("keydown",e=>{
     if(e.key!=="Escape") return;
-    if(geoModal.classList.contains("open")) closeGeo();
+    if(infoModal.classList.contains("open")) closeInfo();
+    else if(geoModal.classList.contains("open")) closeGeo();
     else if(modal.classList.contains("open")) closeModal();
   });
   langBtn.addEventListener("click",()=>setLang(LANG==="it"?"en":"it"));
