@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.9.4";
+  const APP_VERSION="1.9.5";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -322,7 +322,7 @@
         infoModal=$("infoModal"), infoBackdrop=$("infoBackdrop"), infoClose=$("infoClose"),
         batch=$("batch"), batchList=$("batchList"), batchTitle=$("batchTitle"),
         batchDownloadAll=$("batchDownloadAll"), batchReset=$("batchReset"), appVer=$("appVer"),
-        headerInfoBtn=$("headerInfoBtn"), footerInfoBtn=$("footerInfoBtn"),
+        headerInfoBtn=$("headerInfoBtn"),
         infoVersion=$("infoVersion");
 
   let batchItems=[], batchURLs=[];
@@ -1101,8 +1101,6 @@
   actClean.addEventListener("click",doClean);
   actAnalyze.addEventListener("click",showAnalysis);
   headerInfoBtn.addEventListener("click",openInfo);
-  footerInfoBtn.addEventListener("click",openInfo);
-  footerInfoBtn.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openInfo(); } });
   aiInfoBtn.addEventListener("click",openInfo);
   mClose.addEventListener("click",closeModal);
   backdrop.addEventListener("click",closeModal);

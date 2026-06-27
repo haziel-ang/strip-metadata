@@ -218,9 +218,8 @@
 
   footer{text-align:center;color:var(--ink-soft);font-size:.8rem;opacity:0;animation:rise .7s .3s forwards;line-height:1.6}
   footer .lock{display:inline-flex;align-items:center;gap:6px;color:var(--accent-deep);font-weight:600}
-  .footer-info-dot{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin:6px auto 2px;border:1.5px solid var(--accent-soft);border-radius:50%;color:var(--accent-deep);font-size:.9rem;font-style:normal;font-weight:700;cursor:pointer;background:var(--paper);transition:background .2s,transform .15s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
-  .footer-info-dot:hover{background:var(--accent-soft);box-shadow:0 0 0 5px var(--accent-soft)}
-  .footer-info-dot:active{transform:scale(.94)}
+  footer .lock svg{width:13px;height:13px}</｜DSML｜parameter>
+<｜DSML｜parameter name=
   footer .lock svg{width:13px;height:13px}
   footer a{color:var(--accent-deep);text-decoration:underline;text-underline-offset:2px}
   .credit{display:inline-block;margin-top:8px;opacity:.85}
@@ -459,11 +458,6 @@
 
   <footer>
     <div class="stat" id="statCleaned" hidden></div>
-    <span class="lock">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-      <span data-i18n="ui.footerLock"></span>
-    </span>
-    <span class="footer-info-dot" id="footerInfoBtn" role="button" tabindex="0" aria-label="Apri approfondimenti" title="Apri approfondimenti">&#8505;</span>
     <small class="credit" data-i18n-html="ui.credit"></small><br>
     <small class="ver" id="appVer"></small>
   </footer>
