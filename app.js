@@ -291,7 +291,7 @@
     const lb=$("langBtn"); if(lb) lb.setAttribute("aria-label", LANG==="it"?"Lingua / Language":"Language / Lingua");
     if(preview) preview.alt=t("alt.preview");
     if(mImg) mImg.alt=t("alt.result");
-    if(appVer) appVer.textContent="noMeta v"+APP_VERSION;
+    if(appVer) appVer.textContent="v"+APP_VERSION;
     if(aiInfoBtn){ aiInfoBtn.setAttribute("aria-label",t("btn.aiInfo")); aiInfoBtn.title=t("btn.aiInfo"); }
     if(batchDownloadAll && !batchDownloadAll.disabled && batchItems.length)
       batchDownloadAll.textContent=t("batch.downloadAll",{n:batchItems.length});
