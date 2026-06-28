@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.11.0 — 2026-06-28
+
+- Analisi AI PNG asincrona con decompressione locale dei chunk `zTXt` e
+  `iTXt` compressi tramite `DecompressionStream`.
+- Riconoscimento ampliato di generatori/frasi OpenAI, ChatGPT, GPT-4o e
+  dichiarazioni come "edited with AI" / "powered by AI".
+- Vista tecnica nella modale di analisi con chunk letti, decompressi/falliti
+  ed estratto grezzo sanitizzato.
+- Avviata migrazione conservativa React/TypeScript con core AI testabile,
+  fixture Vitest per `tEXt`, `zTXt`, `iTXt` e shell `react.html`.
+
 ## v1.9.8 — 2026-06-27
 
 - Info badge: cerchio pieno blu con `i` bianca.

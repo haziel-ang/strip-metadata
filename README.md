@@ -112,9 +112,10 @@ Tutto ciò che accade, accade **solo sul tuo dispositivo, in locale**:
 - **Il contatore** (`localStorage`) — quante immagini hai ripulito su
   *questo* dispositivo. Nessun beacon, nessun analytics.
 - **Lingua e tema** — salvati solo in `localStorage`. Nessun cookie.
-- **Nessuna dipendenza esterna**: niente Google Fonts, niente CDN,
-  niente librerie npm. La pagina è due file statici autosufficienti
-  (`index.html` + `app.js`).
+- **Nessuna dipendenza runtime esterna**: niente Google Fonts, niente CDN,
+  nessuna chiamata API. La versione stabile resta composta da file statici
+  (`index.html` + `app.js`). Le dipendenze npm servono solo per build, test
+  e migrazione React/TypeScript.
 
 Il browser è l'ambiente, il browser è il limite. Niente esce, niente
 entra.
@@ -140,6 +141,29 @@ puoi copiare e modificare, citando l'autore. Vedi [`LICENSE`](./LICENSE).
 |---|---|
 | `index.html` | Markup, CSS (font in base64), controlli lingua/tema |
 | `app.js` | Logica: parsing EXIF/PNG/WebP, pulizia, analisi AI, UI |
+| `react.html` | Shell React/TypeScript separata per migrare senza sostituire la UI stabile |
+| `src/metadata/ai.ts` | Primo core TypeScript testabile per analisi AI metadata |
+| `src/metadata/ai.test.ts` | Fixture in memoria per PNG `tEXt`, `zTXt`, `iTXt` compressi |
 | `SECURITY.md` | Hardening CSP, anti-XSS, anti-clickjacking |
 | `RESEARCH.md` | Ricerca su provenienza AI, C2PA, IPTC, SynthID |
 | `CHANGELOG.md` | Cronologia versioni |
+
+## Sviluppo
+
+La migrazione React/TypeScript procede in parallelo alla versione stabile:
+prima si spostano le funzioni pure in `src/metadata/`, poi si coprono con
+test, infine la UI React sostituirà gradualmente il DOM legacy.
+
+Comandi utili:
+
+```bash
+npm test
+npm run build
+npm run dev
+```
+
+`npm run build` genera `dist/react.html` e asset statici: sono compatibili
+con GitHub Pages perché non richiedono server, backend o variabili segrete.
+GitHub Pages può ospitare la app finché tutto resta client-side; Python o
+altro codice server richiederebbero invece un backend separato e romperebbero
+la promessa "nessun upload", salvo uso puramente locale.

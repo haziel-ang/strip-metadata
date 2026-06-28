@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.10.0
+ * @version 1.11.0
  * @year    2026
  * @author  profxeni
  *
@@ -25,12 +25,13 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.10.0";
+  const APP_VERSION="1.11.0";
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
   const MAX_META_CHARS=512;            // lunghezza massima mostrata per un valore
   const MAX_SCAN_BYTES=2*1024*1024;    // byte di metadati analizzati per l'AI scan
+  const MAX_AI_DEBUG_CHARS=1800;        // estratto grezzo mostrato nella vista tecnica
   const MAX_PIXELS=80*1000*1000;       // ~80 MP: guardia contro "decompression bomb"
   const MAX_JPEG_SEG=4096;             // tetto massimo segmenti JPEG (anti-DoS)
 
@@ -113,8 +114,15 @@
       "ai.workflow.k":"Workflow o parametri generativi",
       "ai.workflow.v":"prompt/seed/modello/sampler o workflow compatibili con generatori AI",
       "ai.compressed.k":"Metadati testuali compressi",
-      "ai.compressed.v":"il file contiene un blocco testuale compresso con keyword sospetta; il browser lo segnala ma non lo decomprime offline",
+      "ai.compressed.v":"il file contiene un blocco testuale compresso con keyword sospetta che non è stato possibile decomprimere in questo browser",
       "ai.phrase.k":"Dichiarazione testuale nei metadati",
+      "ai.debug.title":"Vista tecnica metadati",
+      "ai.debug.none":"Nessun testo grezzo leggibile nei metadati analizzati.",
+      "ai.debug.chunks":"Chunk PNG letti",
+      "ai.debug.inflated":"Decompressi",
+      "ai.debug.failed":"Compressi non aperti",
+      "ai.debug.bytes":"Byte campionati",
+      "ai.debug.raw":"Estratto grezzo",
       "ai.action.k":"Azione dichiarata nel manifest C2PA",
       "ai.action.created":"immagine generata da AI (c2pa.created)",
       "ai.action.edited":"foto modificata/composita con AI (c2pa.edited / placed)",
@@ -215,8 +223,15 @@
       "ai.workflow.k":"Generative workflow or parameters",
       "ai.workflow.v":"prompt/seed/model/sampler or workflow fields compatible with AI generators",
       "ai.compressed.k":"Compressed text metadata",
-      "ai.compressed.v":"the file contains a compressed text block with a suspicious keyword; the browser flags it but does not decompress it offline",
+      "ai.compressed.v":"the file contains a compressed text block with a suspicious keyword that could not be decompressed in this browser",
       "ai.phrase.k":"Text declaration in metadata",
+      "ai.debug.title":"Technical metadata view",
+      "ai.debug.none":"No readable raw text in the analyzed metadata.",
+      "ai.debug.chunks":"PNG chunks read",
+      "ai.debug.inflated":"Decompressed",
+      "ai.debug.failed":"Compressed not opened",
+      "ai.debug.bytes":"Sampled bytes",
+      "ai.debug.raw":"Raw excerpt",
       "ai.action.k":"Declared action in the C2PA manifest",
       "ai.action.created":"AI-generated image (c2pa.created)",
       "ai.action.edited":"AI-edited / composite photo (c2pa.edited / placed)",
@@ -538,9 +553,28 @@
      Legge SOLO i metadati/segmenti del file (non i pixel): manifest C2PA,
      etichetta IPTC DigitalSourceType, marcatori XMP e nomi di generatori AI.
      NON rileva i watermark invisibili nei pixel come Google SynthID. */
-  function aiScan(buf,type){
+  function normalizeDebugText(s){
+    return String(s||"").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]+/g," ")
+      .replace(/\s+/g," ").trim().slice(0,MAX_AI_DEBUG_CHARS);
+  }
+
+  async function inflateZlibBytes(u8){
+    if(!("DecompressionStream" in window)) return null;
+    try{
+      const ds=new DecompressionStream("deflate");
+      const writer=ds.writable.getWriter();
+      await writer.write(u8);
+      await writer.close();
+      return await new Response(ds.readable).arrayBuffer();
+    }catch(e){
+      return null;
+    }
+  }
+
+  async function aiScan(buf,type){
     const view=new DataView(buf), parts=[];
-    const flags={c2paBox:false,compressedTextKeys:[]};
+    const flags={c2paBox:false,compressedTextKeys:[],decompressedTextKeys:[],failedCompressedTextKeys:[]};
+    const debug={chunks:[],rawSample:"",scanBytes:0};
     let scanned=0;
     function addText(s){
       if(!s) return;
@@ -572,13 +606,28 @@
     }
     function zero(start,end){ for(let i=start;i<end;i++) if(view.getUint8(i)===0) return i; return -1; }
     function textRange(start,end){ return decodeBytes(new Uint8Array(buf,start,Math.max(0,end-start))).trim(); }
-    function readPngText(kind,ps,len){
+    function latin1Range(start,end){
+      let s="";
+      for(let i=start;i<end;i++) s+=String.fromCharCode(view.getUint8(i));
+      return s.trim();
+    }
+    async function readPngText(kind,ps,len){
       const end=Math.min(ps+len,view.byteLength), z=zero(ps,end);
-      const key=z>ps ? textRange(ps,z).trim() : "";
+      const key=z>ps ? latin1Range(ps,z) : "";
+      debug.chunks.push({type:kind,key:key||"(empty)",bytes:Math.max(0,end-ps),compressed:kind==="zTXt"});
       if(kind==="tEXt" && z>ps){ addText(key+" "+textRange(z+1,end)); return; }
       if(kind==="zTXt" && z>ps){
-        if(/prompt|parameters|workflow|comfy|stable|generation/i.test(key)) flags.compressedTextKeys.push(key);
-        addText(key+" zTXt compressed text metadata");
+        const method=z+1<end ? view.getUint8(z+1) : -1;
+        const compressed=new Uint8Array(buf,z+2,Math.max(0,end-z-2));
+        const inflated=method===0 ? await inflateZlibBytes(compressed) : null;
+        if(inflated){
+          flags.decompressedTextKeys.push(key||"zTXt");
+          addText(key+" "+decodeBytes(new Uint8Array(inflated)));
+        }else{
+          if(/prompt|parameters|workflow|comfy|stable|generation/i.test(key)) flags.compressedTextKeys.push(key);
+          flags.failedCompressedTextKeys.push(key||"zTXt");
+          addText(key+" zTXt compressed text metadata");
+        }
         return;
       }
       if(kind==="iTXt" && z>ps && z+3<end){
@@ -589,8 +638,17 @@
         const translatedEnd=zero(p,end); if(translatedEnd<0) return;
         p=translatedEnd+1;
         if(compressed){
-          if(/prompt|parameters|workflow|comfy|stable|generation/i.test(key)) flags.compressedTextKeys.push(key);
-          addText(key+" iTXt compressed text metadata");
+          const method=view.getUint8(z+2);
+          const packed=new Uint8Array(buf,p,Math.max(0,end-p));
+          const inflated=method===0 ? await inflateZlibBytes(packed) : null;
+          if(inflated){
+            flags.decompressedTextKeys.push(key||"iTXt");
+            addText(key+" "+decodeBytes(new Uint8Array(inflated)));
+          }else{
+            if(/prompt|parameters|workflow|comfy|stable|generation/i.test(key)) flags.compressedTextKeys.push(key);
+            flags.failedCompressedTextKeys.push(key||"iTXt");
+            addText(key+" iTXt compressed text metadata");
+          }
         }else addText(key+" "+textRange(p,end));
       }
     }
@@ -620,7 +678,7 @@
           const len=view.getUint32(off);
           let tt="";for(let i=0;i<4;i++)tt+=String.fromCharCode(view.getUint8(off+4+i));
           const ps=off+8;
-          if(["tEXt","iTXt","zTXt"].includes(tt)) readPngText(tt,ps,len);
+          if(["tEXt","iTXt","zTXt"].includes(tt)) await readPngText(tt,ps,len);
           else if(["eXIf","iCCP","caBX"].includes(tt)) push(ps, ps+len);
           if(tt==="caBX") flags.c2paBox=true; // chunk privato C2PA
           if(tt==="IEND") break;
@@ -640,11 +698,15 @@
       }
     }catch(e){}
     const text=parts.join("\n");
-    return {text, lower:text.toLowerCase(), flags};
+    debug.scanBytes=scanned || Math.min(text.length,MAX_SCAN_BYTES);
+    debug.rawSample=normalizeDebugText(text);
+    debug.decompressed=[...new Set(flags.decompressedTextKeys)];
+    debug.failedCompressed=[...new Set(flags.failedCompressedTextKeys)];
+    return {text, lower:text.toLowerCase(), flags, debug};
   }
 
-  function analyzeAI(buf,type){
-    const scan=aiScan(buf,type), lower=scan.lower, signals=[];
+  async function analyzeAI(buf,type){
+    const scan=await aiScan(buf,type), lower=scan.lower, signals=[];
     let strong=false, maybe=false;
 
     // 1) Manifest C2PA / Content Credentials (anche WebP). Distingue generata vs modificata.
@@ -678,8 +740,8 @@
 
     // 3) Nomi di software/generatori AI nei metadati (substring, come fanno i detector reali) → segnale forte.
     const gens=[
-      ["azure openai","Azure OpenAI"],["chatgpt","ChatGPT (OpenAI)"],["openai","OpenAI"],
-      ["dall·e","DALL·E"],["dall-e","DALL·E"],["dalle","DALL·E"],["gpt-image","GPT-image (OpenAI)"],["gpt-4o","GPT-4o (OpenAI)"],["sora","Sora (OpenAI)"],
+      ["azure openai","Azure OpenAI"],["chat gpt","ChatGPT (OpenAI)"],["chatgpt","ChatGPT (OpenAI)"],["openai","OpenAI"],
+      ["dall·e","DALL·E"],["dall-e","DALL·E"],["dall e","DALL·E"],["dalle","DALL·E"],["gpt-image","GPT-image (OpenAI)"],["gpt image","GPT-image (OpenAI)"],["gpt-4o","GPT-4o (OpenAI)"],["gpt 4o","GPT-4o (OpenAI)"],["gpt4o","GPT-4o (OpenAI)"],["sora","Sora (OpenAI)"],
       ["google c2pa","Google (C2PA)"],["made with google ai","Google AI"],["nano banana","Gemini 2.5 Flash Image (nano banana)"],["gemini","Google Gemini"],["imagen","Google Imagen"],
       ["adobe firefly","Adobe Firefly"],["firefly","Adobe Firefly"],
       ["bing image creator","Bing Image Creator"],["microsoft designer","Microsoft Designer"],
@@ -719,16 +781,28 @@
     }
 
     // 4) Dichiarazioni testuali esplicite.
-    const phrases=[["made with ai","“Made with AI”"],["ai generated","“AI generated”"],["generated by ai","“Generated by AI”"],["created with ai","“Created with AI”"],["ai generated image","“AI Generated Image”"]];
+    const phrases=[
+      ["made with ai","Made with AI"],["ai generated","AI generated"],["generated by ai","Generated by AI"],
+      ["created with ai","Created with AI"],["created by ai","Created by AI"],["ai generated image","AI generated image"],
+      ["edited with ai","Edited with AI"],["edited by ai","Edited by AI"],["modified with ai","Modified with AI"],
+      ["powered by ai","Powered by AI"],["created by openai","Created by OpenAI"],["generated by openai","Generated by OpenAI"],
+      ["made with openai","Made with OpenAI"],["created with openai","Created with OpenAI"],
+      ["created by chatgpt","Created by ChatGPT"],["generated by chatgpt","Generated by ChatGPT"],
+      ["made with chatgpt","Made with ChatGPT"],["created with chatgpt","Created with ChatGPT"]
+    ];
     const foundPhr=[];
-    for(const [tok,label] of phrases){ if(lower.includes(tok)&&!foundPhr.includes(label)) foundPhr.push(label); }
+    function hasPhrase(tok){
+      const pat=tok.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/\s+/g,"\\s+");
+      return new RegExp("\\b"+pat+"\\b","i").test(lower);
+    }
+    for(const [tok,label] of phrases){ if(hasPhrase(tok)&&!foundPhr.includes(label)) foundPhr.push(label); }
     if(foundPhr.length){ strong=true; signals.push({strong:true,ico:"💬",kKey:"ai.phrase.k",vRaw:foundPhr.join(", ")}); }
 
-    return { level: strong?"detected":(maybe?"maybe":"clear"), signals };
+    return { level: strong?"detected":(maybe?"maybe":"clear"), signals, debug:scan.debug };
   }
 
   const AI_ICON={detected:"🤖",maybe:"❓",clear:"✓"};
-  function renderAI(ai){
+  function renderAI(ai,showDebug){
     mAIWrap.innerHTML="";
     const banner=document.createElement("div");
     banner.className="ai-verdict "+ai.level;
@@ -752,6 +826,45 @@
     note.innerHTML='<summary>'+esc(t("ai.noteTitle"))+'</summary>'+
       '<p>'+t("ai.note")+'</p>';  // ai.note è una stringa interna fidata (HTML)
     mAIWrap.appendChild(note);
+    if(showDebug) renderAIDebug(ai);
+  }
+
+  function renderAIDebug(ai){
+    const dbg=ai&&ai.debug;
+    if(!dbg) return;
+    const details=document.createElement("details");
+    details.className="why ai-debug";
+    const summary=document.createElement("summary");
+    summary.textContent=t("ai.debug.title");
+    details.appendChild(summary);
+
+    const body=document.createElement("div");
+    body.className="ai-debug-body";
+    const chunks=(dbg.chunks||[]).map(c=>c.type+(c.key ? ":"+c.key : "")).join(", ");
+    const rows=[
+      [t("ai.debug.bytes"), String(dbg.scanBytes||0)],
+      [t("ai.debug.chunks"), chunks || "0"],
+      [t("ai.debug.inflated"), (dbg.decompressed||[]).join(", ") || "0"],
+      [t("ai.debug.failed"), (dbg.failedCompressed||[]).join(", ") || "0"]
+    ];
+    rows.forEach(([k,v])=>{
+      const row=document.createElement("div");
+      row.className="ai-debug-row";
+      const key=document.createElement("span"); key.textContent=k;
+      const val=document.createElement("b"); val.textContent=v;
+      row.appendChild(key); row.appendChild(val);
+      body.appendChild(row);
+    });
+
+    const label=document.createElement("div");
+    label.className="ai-debug-label";
+    label.textContent=t("ai.debug.raw");
+    body.appendChild(label);
+    const pre=document.createElement("pre");
+    pre.textContent=dbg.rawSample || t("ai.debug.none");
+    body.appendChild(pre);
+    details.appendChild(body);
+    mAIWrap.appendChild(details);
   }
 
   /* ====================== PULIZIA ====================== */
@@ -852,7 +965,7 @@
 
     const buf=await file.arrayBuffer();
     lastReport=analyze(buf,file.type);
-    lastAI=analyzeAI(buf,file.type);
+    lastAI=await analyzeAI(buf,file.type);
     await new Promise(r=>setTimeout(r,650));
 
     frame.classList.remove("scanning"); chip.classList.remove("show");
@@ -896,7 +1009,7 @@
           act=row.querySelector(".bact"), name=row.querySelector(".bname");
     try{
       const buf=await file.arrayBuffer();
-      const ai=analyzeAI(buf,file.type);
+      const ai=await analyzeAI(buf,file.type);
       const cleaned=await cleanImage(file);
       const cf=new File([cleaned.blob], renameClean(file.name,cleaned.type), {type:cleaned.type});
       const url=URL.createObjectURL(cleaned.blob); batchURLs.push(url);
@@ -980,7 +1093,7 @@
     }
     mAITitle.textContent=t("modal.analyzeTitle");
 
-    renderAI(lastAI);
+    renderAI(lastAI, analyzeOnly);
 
     mMeta.innerHTML="";
     if(lastReport && lastReport.items.length){
