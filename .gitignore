@@ -5,3 +5,5 @@ coverage/
 npm-debug.log*
 .vscode/
 .mcp.json
+.codex/
+truck-map/
