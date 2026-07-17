@@ -20,6 +20,7 @@ né telemetria. Di seguito **ogni misura di sicurezza e cosa serve a evitare**.
 | 11 | **Guardia "decompression bomb" (~80 MP)** prima di allocare il canvas | `app.js` | **Esaurimento memoria**: file piccolo che decodifica in un'immagine gigantesca |
 | 12 | **Cap sui byte di metadati analizzati (2 MB)** e sulle stringhe EXIF (512 char) | `app.js` | **DoS / memoria**: segmenti di metadati abnormi |
 | 13 | **`localStorage` in `try/catch`** (lingua/tema) | `app.js` | **Crash** dove lo storage è disabilitato (es. modalità privata) |
+| 14 | **Cache PWA con allowlist chiusa dei soli asset statici** | `sw.js` | **Persistenza involontaria di dati utente**: immagini originali, anteprime e file puliti non entrano mai nella cache offline |
 
 ## Cosa NON protegge (limiti dichiarati)
 

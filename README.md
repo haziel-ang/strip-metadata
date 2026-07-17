@@ -7,6 +7,11 @@ mai il tuo dispositivo: viene letto in memoria, elaborato con le API
 native del browser (Canvas, DataView, TextDecoder) e il risultato è un
 Blob che puoi scaricare. Funziona anche offline.
 
+È installabile come **PWA** su smartphone e desktop: manifest, icone e
+service worker sono tutti locali. La cache offline contiene esclusivamente
+la shell statica dell'app; le immagini aperte o generate non vengono mai
+salvate dal service worker.
+
 Lo scopo è uno solo: **nessun dato deve poter uscire da questo ambiente**.
 Ogni scelta tecnica — dalla Content Security Policy al design interno —
 serve a garantirlo.

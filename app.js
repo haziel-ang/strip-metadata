@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.11.0
+ * @version 1.12.0
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,14 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.11.0";
+  const APP_VERSION="1.12.0";
+  const swAllowed = location.protocol === "https:" ||
+    location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  if ("serviceWorker" in navigator && swAllowed) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  }
 
   // Limiti difensivi (anti-DoS in locale).
   const MAX_FILE_BYTES=64*1024*1024;   // 64 MB: tetto sul file in ingresso
@@ -52,8 +59,8 @@
       "ui.h1":"Pulisci i tuoi <em>scatti</em>",
       "ui.badgeInfo":"Come funziona",
       "ui.dropTitle":"Carica un'immagine",
-      "ui.dropDesc":"Trascina una o più immagini, oppure tocca per sceglierle",
-      "ui.choiceQ":"Cosa vuoi fare con questa immagine?",
+      "ui.dropDesc":"Trascina qui le immagini. Oppure tocca per sceglierle.",
+      "ui.choiceQ":"Vuoi pulirla o capire cosa raccontano i suoi dati?",
       "ui.reset":"↺ Carica un'altra immagine",
       "ui.footerLock":"Elaborazione locale",
       "ui.cleanedOne":"🧹 1 immagine ripulita su questo dispositivo",
@@ -63,28 +70,28 @@
       "geo.viewMap":"Mappa","geo.title":"Posizione GPS",
       "geo.openOSM":"Apri in OpenStreetMap","geo.openGoogle":"Apri in Google Maps",
       "geo.copy":"Copia coordinate","geo.copied":"Copiato ✓",
-      "geo.note":"Il pulsante apre una mappa esterna in una nuova scheda: la posizione verrà condivisa con quel servizio. La pagina, di per sé, non invia nulla.",
+      "geo.note":"Se apri una mappa, queste coordinate saranno inviate al servizio scelto. noMeta non le invia da sola.",
       "btn.clean":"Pulisci i metadati","btn.analyze":"Analizza immagine","btn.aiInfo":"Info analisi AI",
       "btn.download":"Scarica immagine pulita","btn.share":"Condividi",
       "btn.saveShare":"Salva / Condividi","btn.fullscreen":"Apri a schermo intero",
       "chip.analyzing":"Analisi…","chip.cleaning":"Rimozione metadati…",
-      "hint.detected":"Rilevati segnali di origine AI nei metadati.",
-      "hint.maybe":"Possibili indizi AI nei metadati.",
-      "hint.metaCount":"{n} metadato/i presenti · nessun segnale AI",
-      "hint.none":"Nessun metadato evidente · nessun segnale AI",
+      "hint.detected":"I metadati dichiarano o suggeriscono un'origine AI.",
+      "hint.maybe":"C'è qualche traccia di strumenti AI. Non basta per esserne certi.",
+      "hint.metaCount":"Trovati {n} dati incorporati. Nessuna traccia evidente di AI.",
+      "hint.none":"Nessun dato evidente. Questo non prova che l'immagine sia autentica.",
       "err.fileTooLarge":"File troppo grande (max {mb} MB).",
       "err.pixels":"Immagine troppo grande da elaborare (oltre 80 megapixel).",
       "err.format":"Questo formato non è elaborabile in questo browser — prova con un JPG o PNG.",
       "modal.cleanTitle":"Immagine ripulita","modal.analyzeTitle":"Analisi origine AI",
-      "modal.analyzeSub":"Lettura dei metadati dell'immagine caricata.",
-      "modal.cleanSubGps":"Posizione GPS e altri dati eliminati.",
-      "modal.cleanSubItems":"Dati nascosti eliminati con successo.",
-      "modal.cleanSubNone":"Riesportata senza alcun metadato.",
+      "modal.analyzeSub":"Ecco cosa raccontano le informazioni nascoste nel file.",
+      "modal.cleanSubGps":"La posizione e gli altri dati nascosti non ci sono più.",
+      "modal.cleanSubItems":"I dati nascosti non ci sono più.",
+      "modal.cleanSubNone":"L'immagine è stata ricreata senza dati nascosti.",
       "meta.removedTitle":"Metadati rimossi","meta.presentTitle":"Metadati presenti nel file",
       "meta.removedPill":"rimosso","size.original":"Originale","size.cleaned":"Pulita",
-      "empty.unknown":"Formato non analizzabile in dettaglio in questo browser.",
-      "empty.analyzeNone":"Nessun metadato evidente presente nel file.",
-      "empty.cleanNone":"Nessun metadato evidente era presente. L'immagine è stata comunque riesportata pulita.",
+      "empty.unknown":"Questo browser non riesce a leggere tutti i dettagli del formato.",
+      "empty.analyzeNone":"Non ho trovato dati nascosti leggibili.",
+      "empty.cleanNone":"Non c'erano dati evidenti. Ho comunque ricreato l'immagine pulita.",
       "ios.secure":"Per salvarla nelle Foto: <b>tieni premuto</b> sull'immagine qui sopra → <b>Salva immagine</b>, oppure usa il pulsante qui sotto.",
       "ios.insecure":"⚠️ Il salvataggio con un tocco funziona solo aprendo questa pagina dal suo indirizzo <b>https://</b> (non dall'anteprima o da un file locale). Per ora: <b>tieni premuto</b> sull'immagine qui sopra → <b>Salva immagine</b>.",
       "meta.camera":"Fotocamera / dispositivo","meta.datetimeShot":"Data e ora dello scatto",
@@ -95,27 +102,27 @@
       "val.c2pa":"manifest di provenienza incorporato (spesso AI)",
       "extra.icc":"profilo colore","extra.iptc":"IPTC/Photoshop","extra.xmp":"XMP","extra.comment":"commenti",
       "verdict.detected.h":"Segnali di origine AI rilevati",
-      "verdict.detected.p":"Nei metadati ci sono credenziali o etichette che indicano contenuto generato o modificato con AI.",
+      "verdict.detected.p":"Il file contiene una dichiarazione che indica un'immagine generata o modificata con AI.",
       "verdict.maybe.h":"Possibili indizi di AI",
-      "verdict.maybe.p":"Trovati riferimenti a strumenti AI nei metadati. Indizio non conclusivo.",
+      "verdict.maybe.p":"Il file nomina strumenti o impostazioni usate dall'AI. È una traccia, non una prova.",
       "verdict.clear.h":"Nessun segnale AI nei metadati",
-      "verdict.clear.p":"Non risultano credenziali C2PA, etichette IPTC né nomi di generatori AI nei metadati del file.",
+      "verdict.clear.p":"Non ho trovato dichiarazioni o nomi di strumenti AI. Ma i metadati possono essere rimossi.",
       "ai.pill.strong":"AI","ai.pill.weak":"indizio",
-      "ai.c2pa.k":"Credenziali di provenienza C2PA",
-      "ai.c2pa.v":"Manifest Content Credentials incorporato: dichiara origine/cronologia; diventa forte se contiene azioni o sorgenti AI",
-      "ai.iptc.k":"Etichetta IPTC di origine digitale",
-      "ai.dst.composite":"Composito con elementi generati da AI (IPTC)",
-      "ai.dst.trained":"Generata da AI addestrata — IPTC trainedAlgorithmicMedia",
-      "ai.dst.compositeSynthetic":"Composito sintetico (IPTC)",
-      "ai.dst.algorithmic":"Media algoritmica (IPTC)",
-      "ai.iptcPresent.k":"Campo IPTC DigitalSourceType presente",
-      "ai.iptcPresent.v":"presente, ma con valore non riconosciuto come AI",
-      "ai.gen.k":"Software/generatore AI nei metadati",
-      "ai.workflow.k":"Workflow o parametri generativi",
-      "ai.workflow.v":"prompt/seed/modello/sampler o workflow compatibili con generatori AI",
-      "ai.compressed.k":"Metadati testuali compressi",
-      "ai.compressed.v":"il file contiene un blocco testuale compresso con keyword sospetta che non è stato possibile decomprimere in questo browser",
-      "ai.phrase.k":"Dichiarazione testuale nei metadati",
+      "ai.c2pa.k":"Dichiarazione sull'origine dell'immagine",
+      "ai.c2pa.v":"Il file conserva una cronologia firmata. Se dichiara l'uso di AI, è un segnale forte.",
+      "ai.iptc.k":"Etichetta sull'origine digitale",
+      "ai.dst.composite":"Contiene elementi generati con AI",
+      "ai.dst.trained":"Dichiarata come immagine generata con AI",
+      "ai.dst.compositeSynthetic":"Dichiarata come composizione sintetica",
+      "ai.dst.algorithmic":"Dichiarata come immagine algoritmica",
+      "ai.iptcPresent.k":"Etichetta di origine presente",
+      "ai.iptcPresent.v":"Il valore non indica un'origine AI riconoscibile.",
+      "ai.gen.k":"Nome di uno strumento AI",
+      "ai.workflow.k":"Impostazioni di generazione",
+      "ai.workflow.v":"Il file conserva prompt, modello, seed o altre impostazioni tipiche dei generatori AI.",
+      "ai.compressed.k":"Testo nascosto e compresso",
+      "ai.compressed.v":"Il file contiene un testo sospetto che questo browser non è riuscito ad aprire.",
+      "ai.phrase.k":"Dichiarazione scritta nel file",
       "ai.debug.title":"Vista tecnica metadati",
       "ai.debug.none":"Nessun testo grezzo leggibile nei metadati analizzati.",
       "ai.debug.chunks":"Chunk PNG letti",
@@ -123,46 +130,57 @@
       "ai.debug.failed":"Compressi non aperti",
       "ai.debug.bytes":"Byte campionati",
       "ai.debug.raw":"Estratto grezzo",
-      "ai.action.k":"Azione dichiarata nel manifest C2PA",
-      "ai.action.created":"immagine generata da AI (c2pa.created)",
-      "ai.action.edited":"foto modificata/composita con AI (c2pa.edited / placed)",
-      "ai.noteTitle":"Perché non rileva SynthID?",
-      "ai.note":"Questa analisi legge solo i <b>metadati</b> del file. I <b>watermark invisibili nei pixel</b> (es. Google <b>SynthID</b> di Gemini/Imagen) <b>non sono verificabili in questo browser</b>: serve il rilevatore ufficiale di Google. I metadati inoltre possono essere stati rimossi, quindi la loro assenza <b>non prova</b> che un'immagine non sia generata da AI.",
-      "info.title":"Cosa controlla davvero",
-      "info.sub":"Lettura locale dei metadati: cerca prove tecniche, non giudica i pixel.",
-      "info.detectTitle":"Rilevamento AI",
-      "info.detect1":"C2PA / Content Credentials in JPEG, PNG e WebP, incluse azioni come c2pa.created e c2pa.edited.",
-      "info.detect2":"IPTC DigitalSourceType, compresi trainedAlgorithmicMedia e compositeWithTrainedAlgorithmicMedia.",
-      "info.detect3":"XMP, EXIF Software e blocchi testuali PNG/WebP con nomi di generatori o workflow.",
-      "info.detect4":"Parametri tipici di Stable Diffusion, ComfyUI, A1111, Fooocus, InvokeAI, FLUX e simili: prompt, seed, sampler, model hash, CFG, steps.",
+      "ai.action.k":"Cosa dichiara la cronologia",
+      "ai.action.created":"Immagine creata con AI",
+      "ai.action.edited":"Foto modificata o composta con AI",
+      "ai.noteTitle":"Cosa può sfuggire all'analisi?",
+      "ai.note":"noMeta legge le informazioni scritte nel file, non i pixel. Non può quindi vedere watermark invisibili come <b>SynthID</b>. E se qualcuno ha già cancellato i metadati, la loro assenza <b>non dimostra</b> che l'immagine sia reale.",
+      "info.title":"Cosa può dirti un'immagine",
+      "info.sub":"noMeta legge i dati nascosti nel file. Non prova a indovinare guardando i pixel.",
+      "info.detectTitle":"Tracce di AI",
+      "info.detect1":"Cerca dichiarazioni di provenienza inserite dai programmi che hanno creato o modificato l'immagine.",
+      "info.detect2":"Legge le etichette usate da editori e agenzie per segnalare contenuti generati o compositi.",
+      "info.detect3":"Riconosce i nomi dei generatori e degli strumenti AI scritti nei metadati.",
+      "info.detect4":"Cerca anche prompt, modello, seed e altre impostazioni lasciate dai programmi di generazione.",
       "info.cleanTitle":"Pulizia",
-      "info.clean1":"Riesporta i pixel via canvas e rimuove EXIF, XMP, IPTC, ICC e manifest C2PA quando il formato lo consente.",
-      "info.clean2":"Nei JPEG elimina anche i marker APP/COM reinseriti dal browser, mantenendo il file scaricabile e pulito.",
-      "info.clean3":"Con più immagini lavora in serie, una alla volta, senza zip e senza librerie esterne.",
+      "info.clean1":"Crea una nuova copia dell'immagine e lascia fuori posizione, dispositivo, date e altri dati nascosti.",
+      "info.clean2":"Controlla anche la copia finale, perché alcuni browser possono reinserire informazioni nei file JPEG.",
+      "info.clean3":"Se scegli più immagini, le pulisce una alla volta sul tuo dispositivo.",
       "info.limitsTitle":"Limiti reali",
-      "info.limit1":"Non verifica watermark invisibili nei pixel come SynthID: servono rilevatori ufficiali esterni.",
-      "info.limit2":"Metadati assenti o ripuliti non provano che l'immagine non sia AI.",
-      "info.limit3":"I metadati possono essere falsificati: il verdetto è un indizio tecnico, non una perizia.",
+      "info.limit1":"Non vede watermark nascosti nei pixel, come SynthID.",
+      "info.limit2":"Se non trova metadati, non significa che l'immagine sia autentica.",
+      "info.limit3":"I dati possono essere cancellati o falsificati. Il risultato è un indizio, non una perizia.",
       "info.privacyTitle":"Privacy",
-      "info.privacy":"Tutto avviene nel browser. La CSP blocca le richieste di rete: l'immagine non viene caricata online.",
-      "info.deepTitle":"Approfondimento",
-      "info.deep":"La confidenza sale quando il file dichiara origine AI tramite C2PA/IPTC, quando compaiono generatori noti, o quando trova una combinazione coerente di prompt, seed, modello, sampler e passi. Un singolo campo generico pesa meno; più segnali indipendenti rendono il risultato più affidabile.",
+      "info.privacy":"La tua immagine resta qui. Il browser la apre in memoria e una regola blocca ogni invio in rete.",
+      "info.deepTitle":"Come leggere il risultato",
+      "info.deep":"Una dichiarazione esplicita nel file vale più di un nome isolato. Più tracce indipendenti trova, più il risultato è affidabile. Una sola parola generica, invece, non basta.",
       "alt.preview":"anteprima","alt.result":"immagine pulita",
       "theme.system":"Sistema","theme.light":"Chiaro","theme.dark":"Scuro",
       "ui.credit":"© 2026 <b>profxeni</b> · Licenza <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: puoi copiarla e modificarla citando l'autore.",
       "info.safetyTitle":"Sicurezza",
-      "info.safetyText":"Gira nel browser, ma non carica niente. La pagina si scarica <b>una volta</b>; da lì la foto è elaborata <b>solo sul tuo dispositivo</b>, in memoria. Una regola di sicurezza (<code>connect-src 'none'</code>) blocca ogni richiesta di rete, quindi l'immagine non può uscire nemmeno per errore. Prova del nove: attiva la <b>modalità aereo</b> e funziona lo stesso.",
+      "info.safetyText":"La pagina arriva sul dispositivo. La foto no: resta nella memoria del browser mentre la pulisci. Nessun caricamento, nessun account. Dopo la prima apertura puoi provare anche in <b>modalità aereo</b>.",
       "info.heic":"*I file HEIC vengono convertiti in JPG durante la pulizia.",
       "info.synthTitle":"Perché non rileva SynthID?",
-      "info.synthText":"L'analisi AI legge solo i <b>metadati</b> del file. I <b>watermark invisibili nei pixel</b> (es. Google <b>SynthID</b> di Gemini/Imagen) <b>non sono verificabili in questo browser</b>: serve il rilevatore ufficiale di Google. I metadati inoltre possono essere stati rimossi, quindi la loro assenza <b>non prova</b> che un'immagine non sia generata da AI. Non usare questo strumento per spacciare contenuti AI come reali o per rimuovere l'attribuzione altrui."
+      "info.synthText":"L'analisi legge le informazioni scritte nel file, non i pixel. Per questo non può vedere watermark invisibili come <b>SynthID</b>. E se i metadati sono già stati rimossi, non può stabilire se l'immagine è nata con l'AI. Il risultato è un indizio, non una prova.",
+      "release.title":"Novità della versione 1.12",
+      "release.sub":"Un aggiornamento piccolo da vedere, grande da usare.",
+      "release.beta":"Versione beta",
+      "release.lead":"noMeta ora può restare sul tuo dispositivo, pronta quando ti serve.",
+      "release.installTitle":"Installala come un'app",
+      "release.installText":"Aggiungila alla schermata Home dello smartphone o al desktop. Si apre senza la cornice del browser.",
+      "release.offlineTitle":"Usala anche senza rete",
+      "release.offlineText":"Dopo la prima apertura, puoi pulire le immagini anche in modalità aereo.",
+      "release.iconTitle":"Trovala al primo sguardo",
+      "release.iconText":"La nuova icona compare nella scheda del browser e tra le app installate.",
+      "release.done":"Ho capito"
     },
     en:{
       "ui.badge":"100% in your browser",
       "ui.h1":"Clean your <em>shots</em>",
       "ui.badgeInfo":"How it works",
       "ui.dropTitle":"Upload an image",
-      "ui.dropDesc":"Drag one or more images, or tap to choose",
-      "ui.choiceQ":"What do you want to do with this image?",
+      "ui.dropDesc":"Drop your images here. Or tap to choose them.",
+      "ui.choiceQ":"Clean it, or see what its hidden data says?",
       "ui.reset":"↺ Load another image",
       "ui.footerLock":"Local processing",
       "ui.cleanedOne":"🧹 1 image cleaned on this device",
@@ -172,28 +190,28 @@
       "geo.viewMap":"Map","geo.title":"GPS location",
       "geo.openOSM":"Open in OpenStreetMap","geo.openGoogle":"Open in Google Maps",
       "geo.copy":"Copy coordinates","geo.copied":"Copied ✓",
-      "geo.note":"The button opens an external map in a new tab: the location will be shared with that service. The page itself sends nothing.",
+      "geo.note":"If you open a map, these coordinates will be sent to that service. noMeta does not send them on its own.",
       "btn.clean":"Clean metadata","btn.analyze":"Analyze image","btn.aiInfo":"AI analysis info",
       "btn.download":"Download clean image","btn.share":"Share",
       "btn.saveShare":"Save / Share","btn.fullscreen":"Open fullscreen",
       "chip.analyzing":"Analyzing…","chip.cleaning":"Removing metadata…",
-      "hint.detected":"AI-origin signals found in metadata.",
-      "hint.maybe":"Possible AI hints in metadata.",
-      "hint.metaCount":"{n} metadata present · no AI signal",
-      "hint.none":"No obvious metadata · no AI signal",
+      "hint.detected":"The metadata declares or suggests an AI origin.",
+      "hint.maybe":"There are traces of AI tools. That is not enough to be certain.",
+      "hint.metaCount":"Found {n} embedded data items. No clear trace of AI.",
+      "hint.none":"No obvious hidden data. This does not prove the image is authentic.",
       "err.fileTooLarge":"File too large (max {mb} MB).",
       "err.pixels":"Image too large to process (over 80 megapixels).",
       "err.format":"This format can't be processed in this browser — try a JPG or PNG.",
       "modal.cleanTitle":"Image cleaned","modal.analyzeTitle":"AI origin analysis",
-      "modal.analyzeSub":"Reading the uploaded image's metadata.",
-      "modal.cleanSubGps":"GPS location and other data removed.",
-      "modal.cleanSubItems":"Hidden data removed successfully.",
-      "modal.cleanSubNone":"Re-exported without any metadata.",
+      "modal.analyzeSub":"Here is what the information hidden in the file says.",
+      "modal.cleanSubGps":"The location and other hidden data are gone.",
+      "modal.cleanSubItems":"The hidden data is gone.",
+      "modal.cleanSubNone":"The image was rebuilt without hidden data.",
       "meta.removedTitle":"Removed metadata","meta.presentTitle":"Metadata present in the file",
       "meta.removedPill":"removed","size.original":"Original","size.cleaned":"Cleaned",
-      "empty.unknown":"Format not analyzable in detail in this browser.",
-      "empty.analyzeNone":"No obvious metadata present in the file.",
-      "empty.cleanNone":"No obvious metadata was present. The image was re-exported clean anyway.",
+      "empty.unknown":"This browser cannot read every detail in this format.",
+      "empty.analyzeNone":"I could not find any readable hidden data.",
+      "empty.cleanNone":"There was no obvious hidden data. I rebuilt a clean copy anyway.",
       "ios.secure":"To save to Photos: <b>press and hold</b> the image above → <b>Save Image</b>, or use the button below.",
       "ios.insecure":"⚠️ One-tap saving only works when opening this page from its <b>https://</b> address (not from a preview or local file). For now: <b>press and hold</b> the image above → <b>Save Image</b>.",
       "meta.camera":"Camera / device","meta.datetimeShot":"Capture date & time",
@@ -204,27 +222,27 @@
       "val.c2pa":"embedded provenance manifest (often AI)",
       "extra.icc":"color profile","extra.iptc":"IPTC/Photoshop","extra.xmp":"XMP","extra.comment":"comments",
       "verdict.detected.h":"AI-origin signals detected",
-      "verdict.detected.p":"The metadata contains credentials or labels indicating AI-generated or AI-edited content.",
+      "verdict.detected.p":"The file contains a statement marking it as generated or edited with AI.",
       "verdict.maybe.h":"Possible AI hints",
-      "verdict.maybe.p":"References to AI tools were found in the metadata. Not conclusive.",
+      "verdict.maybe.p":"The file names tools or settings used by AI. It is a trace, not proof.",
       "verdict.clear.h":"No AI signal in metadata",
-      "verdict.clear.p":"No C2PA credentials, IPTC labels or AI generator names were found in the file's metadata.",
+      "verdict.clear.p":"I found no declarations or AI tool names. But metadata can be removed.",
       "ai.pill.strong":"AI","ai.pill.weak":"hint",
-      "ai.c2pa.k":"C2PA provenance credentials",
-      "ai.c2pa.v":"Embedded Content Credentials manifest: declares origin/history; strong when it includes AI actions or sources",
-      "ai.iptc.k":"IPTC digital source type label",
-      "ai.dst.composite":"Composite with AI-generated elements (IPTC)",
-      "ai.dst.trained":"Generated by trained AI — IPTC trainedAlgorithmicMedia",
-      "ai.dst.compositeSynthetic":"Synthetic composite (IPTC)",
-      "ai.dst.algorithmic":"Algorithmic media (IPTC)",
-      "ai.iptcPresent.k":"IPTC DigitalSourceType field present",
-      "ai.iptcPresent.v":"present, but with a value not recognized as AI",
-      "ai.gen.k":"AI software/generator in metadata",
-      "ai.workflow.k":"Generative workflow or parameters",
-      "ai.workflow.v":"prompt/seed/model/sampler or workflow fields compatible with AI generators",
-      "ai.compressed.k":"Compressed text metadata",
-      "ai.compressed.v":"the file contains a compressed text block with a suspicious keyword that could not be decompressed in this browser",
-      "ai.phrase.k":"Text declaration in metadata",
+      "ai.c2pa.k":"Statement about the image's origin",
+      "ai.c2pa.v":"The file keeps a signed history. If it declares AI use, that is a strong signal.",
+      "ai.iptc.k":"Digital origin label",
+      "ai.dst.composite":"Contains elements generated with AI",
+      "ai.dst.trained":"Declared as generated with AI",
+      "ai.dst.compositeSynthetic":"Declared as a synthetic composite",
+      "ai.dst.algorithmic":"Declared as algorithmic media",
+      "ai.iptcPresent.k":"Origin label present",
+      "ai.iptcPresent.v":"The value does not point to a recognized AI origin.",
+      "ai.gen.k":"Name of an AI tool",
+      "ai.workflow.k":"Generation settings",
+      "ai.workflow.v":"The file keeps a prompt, model, seed, or other settings common to AI generators.",
+      "ai.compressed.k":"Hidden compressed text",
+      "ai.compressed.v":"The file contains suspicious text that this browser could not open.",
+      "ai.phrase.k":"Statement written into the file",
       "ai.debug.title":"Technical metadata view",
       "ai.debug.none":"No readable raw text in the analyzed metadata.",
       "ai.debug.chunks":"PNG chunks read",
@@ -232,38 +250,49 @@
       "ai.debug.failed":"Compressed not opened",
       "ai.debug.bytes":"Sampled bytes",
       "ai.debug.raw":"Raw excerpt",
-      "ai.action.k":"Declared action in the C2PA manifest",
-      "ai.action.created":"AI-generated image (c2pa.created)",
-      "ai.action.edited":"AI-edited / composite photo (c2pa.edited / placed)",
-      "ai.noteTitle":"Why can't it detect SynthID?",
-      "ai.note":"This analysis reads only the file's <b>metadata</b>. <b>Invisible pixel watermarks</b> (e.g. Google <b>SynthID</b> in Gemini/Imagen) <b>cannot be verified in this browser</b>: Google's official detector is required. Metadata may also have been stripped, so its absence <b>does not prove</b> an image is not AI-generated.",
-      "info.title":"What it really checks",
-      "info.sub":"A local metadata read: useful for technical evidence, not a pixel judgment.",
-      "info.detectTitle":"AI detection",
-      "info.detect1":"C2PA / Content Credentials in JPEG, PNG and WebP, including actions such as c2pa.created and c2pa.edited.",
-      "info.detect2":"IPTC DigitalSourceType, including trainedAlgorithmicMedia and compositeWithTrainedAlgorithmicMedia.",
-      "info.detect3":"XMP, EXIF Software and PNG/WebP text blocks containing generator names or workflows.",
-      "info.detect4":"Stable Diffusion, ComfyUI, A1111, Fooocus, InvokeAI, FLUX-like parameters: prompt, seed, sampler, model hash, CFG, steps.",
+      "ai.action.k":"What the image history declares",
+      "ai.action.created":"Image created with AI",
+      "ai.action.edited":"Photo edited or composed with AI",
+      "ai.noteTitle":"What can the analysis miss?",
+      "ai.note":"noMeta reads information written into the file, not its pixels. It cannot see invisible watermarks such as <b>SynthID</b>. And if someone has already removed the metadata, its absence <b>does not prove</b> the image is real.",
+      "info.title":"What an image can tell you",
+      "info.sub":"noMeta reads data hidden in the file. It does not try to guess by looking at pixels.",
+      "info.detectTitle":"Traces of AI",
+      "info.detect1":"It looks for origin statements added by programs that created or edited the image.",
+      "info.detect2":"It reads labels used by publishers and agencies to mark generated or composite content.",
+      "info.detect3":"It recognizes generator and AI tool names written in the metadata.",
+      "info.detect4":"It also looks for prompts, models, seeds, and other settings left by generation tools.",
       "info.cleanTitle":"Cleaning",
-      "info.clean1":"Re-exports pixels through canvas and removes EXIF, XMP, IPTC, ICC and C2PA manifests when the format allows it.",
-      "info.clean2":"For JPEG, it also strips APP/COM markers that the browser encoder may reinsert, while keeping the file downloadable and clean.",
-      "info.clean3":"For multiple images, it works sequentially, one image at a time, with no zip file and no external library.",
+      "info.clean1":"It creates a fresh copy and leaves out location, device, dates, and other hidden data.",
+      "info.clean2":"It checks the final copy too, because some browsers can put information back into JPEG files.",
+      "info.clean3":"If you choose several images, it cleans them one at a time on your device.",
       "info.limitsTitle":"Honest limits",
-      "info.limit1":"It does not verify invisible pixel watermarks such as SynthID: official external detectors are required.",
-      "info.limit2":"Missing or stripped metadata does not prove that an image is not AI-generated.",
-      "info.limit3":"Metadata can be forged: the verdict is a technical clue, not a forensic ruling.",
+      "info.limit1":"It cannot see watermarks hidden in pixels, such as SynthID.",
+      "info.limit2":"If it finds no metadata, that does not mean the image is authentic.",
+      "info.limit3":"Data can be removed or forged. The result is a clue, not a forensic ruling.",
       "info.privacyTitle":"Privacy",
-      "info.privacy":"Everything runs in the browser. The CSP blocks network requests: the image is not uploaded online.",
-      "info.deepTitle":"Deep dive",
-      "info.deep":"Confidence rises when the file declares AI origin through C2PA/IPTC, when known generator names appear, or when it finds a coherent combination of prompt, seed, model, sampler and steps. A single generic field weighs less; multiple independent signals make the result more reliable.",
+      "info.privacy":"Your image stays here. The browser opens it in memory, and a security rule blocks it from being sent online.",
+      "info.deepTitle":"How to read the result",
+      "info.deep":"A clear statement in the file matters more than one isolated name. The more independent traces noMeta finds, the more reliable the result. One generic word is not enough.",
       "alt.preview":"preview","alt.result":"clean image",
       "theme.system":"System","theme.light":"Light","theme.dark":"Dark",
       "ui.credit":"© 2026 <b>profxeni</b> · Licensed <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\">CC BY 4.0</a>: copy and remix it with attribution.",
       "info.safetyTitle":"Safety",
-      "info.safetyText":"It runs in your browser, but nothing is uploaded. The page is downloaded <b>once</b>; from then on your photo is processed <b>only on your device</b>, in memory. A security rule (<code>connect-src 'none'</code>) blocks every network request, so the image can't leave, even by mistake. Proof: turn on <b>airplane mode</b> and it still works.",
+      "info.safetyText":"The page arrives on your device. Your photo does not leave it: it stays in browser memory while you clean it. No upload. No account. After the first visit, try it in <b>airplane mode</b>.",
       "info.heic":"*HEIC files are converted to JPG during cleaning.",
       "info.synthTitle":"Why can't it detect SynthID?",
-      "info.synthText":"The AI analysis reads only the file's <b>metadata</b>. <b>Invisible pixel watermarks</b> (e.g. Google <b>SynthID</b> in Gemini/Imagen) <b>cannot be verified in this browser</b>: Google's official detector is required. Metadata may also have been stripped, so its absence <b>does not prove</b> an image is not AI-generated. Do not use this tool to pass AI content off as real or to strip someone else's attribution."
+      "info.synthText":"The analysis reads information written into the file, not its pixels. That means it cannot see invisible watermarks such as <b>SynthID</b>. If the metadata has already been removed, it cannot tell whether the image was made with AI. The result is a clue, not proof.",
+      "release.title":"What's new in version 1.12",
+      "release.sub":"A small update you can see and a big one you can use.",
+      "release.beta":"Beta version",
+      "release.lead":"noMeta can now stay on your device, ready when you need it.",
+      "release.installTitle":"Install it like an app",
+      "release.installText":"Add it to your phone's Home Screen or your desktop. It opens without the browser frame.",
+      "release.offlineTitle":"Use it without a connection",
+      "release.offlineText":"After the first visit, you can clean images even in airplane mode.",
+      "release.iconTitle":"Find it at a glance",
+      "release.iconText":"The new icon appears in your browser tab and among your installed apps.",
+      "release.done":"Got it"
     }
   };
 
@@ -338,7 +367,9 @@
         batch=$("batch"), batchList=$("batchList"), batchTitle=$("batchTitle"),
         batchDownloadAll=$("batchDownloadAll"), batchReset=$("batchReset"),
         headerInfoBtn=$("headerInfoBtn"),
-        infoVersion=$("infoVersion");
+        infoVersion=$("infoVersion"),
+        releaseModal=$("releaseModal"), releaseBackdrop=$("releaseBackdrop"),
+        releaseClose=$("releaseClose"), releaseDone=$("releaseDone");
 
   let batchItems=[], batchURLs=[];
 
@@ -1213,7 +1244,7 @@
   }
 
   function openInfo(){
-    if(infoVersion) infoVersion.textContent="v"+APP_VERSION;
+    if(infoVersion) infoVersion.textContent="v"+APP_VERSION+" · beta";
     infoModal.classList.add("open");
     infoModal.setAttribute("aria-hidden","false");
     document.body.classList.add("lock");
@@ -1222,6 +1253,22 @@
     infoModal.classList.remove("open");
     infoModal.setAttribute("aria-hidden","true");
     if(!modal.classList.contains("open") && !geoModal.classList.contains("open")) document.body.classList.remove("lock");
+  }
+
+  const RELEASE_SEEN_KEY="nm_release_seen";
+  function openRelease(markSeen=true){
+    if(infoModal.classList.contains("open")) closeInfo();
+    releaseModal.classList.add("open");
+    releaseModal.setAttribute("aria-hidden","false");
+    document.body.classList.add("lock");
+    if(markSeen) writeStore(RELEASE_SEEN_KEY,APP_VERSION);
+  }
+  function closeRelease(){
+    writeStore(RELEASE_SEEN_KEY,APP_VERSION);
+    releaseModal.classList.remove("open");
+    releaseModal.setAttribute("aria-hidden","true");
+    if(!modal.classList.contains("open") && !geoModal.classList.contains("open") && !infoModal.classList.contains("open"))
+      document.body.classList.remove("lock");
   }
 
   function doReset(){
@@ -1258,9 +1305,14 @@
   geoBackdrop.addEventListener("click",closeGeo);
   infoClose.addEventListener("click",closeInfo);
   infoBackdrop.addEventListener("click",closeInfo);
+  infoVersion.addEventListener("click",()=>openRelease(false));
+  releaseClose.addEventListener("click",closeRelease);
+  releaseBackdrop.addEventListener("click",closeRelease);
+  releaseDone.addEventListener("click",closeRelease);
   document.addEventListener("keydown",e=>{
     if(e.key!=="Escape") return;
-    if(infoModal.classList.contains("open")) closeInfo();
+    if(releaseModal.classList.contains("open")) closeRelease();
+    else if(infoModal.classList.contains("open")) closeInfo();
     else if(geoModal.classList.contains("open")) closeGeo();
     else if(modal.classList.contains("open")) closeModal();
   });
@@ -1276,4 +1328,5 @@
   applyTheme();
   applyStaticI18n();
   renderCount();
+  if(readStore(RELEASE_SEEN_KEY)!==APP_VERSION) requestAnimationFrame(()=>openRelease(true));
 })();
