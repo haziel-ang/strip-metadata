@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.12.0
+ * @version 1.12.1
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,9 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.12.0";
+  const APP_VERSION="1.12.1";
+  // Il popup pubblico avanza solo quando viene pubblicato un changelog pubblico.
+  const PUBLIC_RELEASE_VERSION="1.12.0";
   const swAllowed = location.protocol === "https:" ||
     location.hostname === "localhost" || location.hostname === "127.0.0.1";
   if ("serviceWorker" in navigator && swAllowed) {
@@ -41,9 +43,37 @@
   const MAX_AI_DEBUG_CHARS=1800;        // estratto grezzo mostrato nella vista tecnica
   const MAX_PIXELS=80*1000*1000;       // ~80 MP: guardia contro "decompression bomb"
   const MAX_JPEG_SEG=4096;             // tetto massimo segmenti JPEG (anti-DoS)
+  const MAX_META_CHUNKS=4096;           // tetto chunk PNG/WebP percorsi (anti-DoS)
 
   // Solo immagini raster: gli SVG sono esclusi (possono contenere script).
-  function isAllowedType(t){ return /^image\//.test(t) && t!=="image/svg+xml"; }
+  function normalizedMime(t){ return String(t||"").toLowerCase().split(";",1)[0].trim(); }
+  function isAllowedType(t){ t=normalizedMime(t); return /^image\//.test(t) && t!=="image/svg+xml"; }
+  function isAllowedFile(file){
+    if(!file) return false;
+    if(isAllowedType(file.type)) return true;
+    const type=normalizedMime(file.type);
+    return (type==="" || type==="application/octet-stream") && /\.(?:jpe?g|png|webp|heic|heif)$/i.test(file.name||"");
+  }
+
+  // Il MIME di File deriva spesso dall'estensione/OS e non dai byte reali.
+  // I download di ChatGPT, in particolare, possono chiamarsi .png ma contenere
+  // un RIFF/WebP. La firma binaria ha quindi sempre precedenza sul MIME.
+  function sniffImageType(buf,declaredType){
+    try{
+      const view=new DataView(buf);
+      if(view.byteLength>=8){
+        const png=[137,80,78,71,13,10,26,10];
+        if(png.every((b,i)=>view.getUint8(i)===b)) return "image/png";
+      }
+      if(view.byteLength>=3 && view.getUint8(0)===0xFF && view.getUint8(1)===0xD8 && view.getUint8(2)===0xFF)
+        return "image/jpeg";
+      if(view.byteLength>=12){
+        const cc=o=>String.fromCharCode(view.getUint8(o),view.getUint8(o+1),view.getUint8(o+2),view.getUint8(o+3));
+        if(cc(0)==="RIFF" && cc(8)==="WEBP") return "image/webp";
+      }
+    }catch(e){}
+    return "";
+  }
 
   /* SICUREZZA — Escape dei caratteri HTML speciali, da applicare a OGNI testo
      che deriva dal file dell'utente prima di inserirlo via innerHTML. */
@@ -66,7 +96,7 @@
       "ui.cleanedOne":"🧹 1 immagine ripulita su questo dispositivo",
       "ui.cleanedMany":"🧹 {n} immagini ripulite su questo dispositivo",
       "batch.title":"{n} immagini","batch.processing":"Elaborazione…","batch.error":"Errore",
-      "batch.save":"Scarica","batch.aiBadge":"AI","batch.downloadAll":"Scarica tutte ({n})",
+      "batch.save":"Scarica","batch.aiBadge":"AI","batch.aiMaybeBadge":"AI?","batch.downloadAll":"Scarica tutte ({n})",
       "geo.viewMap":"Mappa","geo.title":"Posizione GPS",
       "geo.openOSM":"Apri in OpenStreetMap","geo.openGoogle":"Apri in Google Maps",
       "geo.copy":"Copia coordinate","geo.copied":"Copiato ✓",
@@ -76,7 +106,7 @@
       "btn.saveShare":"Salva / Condividi","btn.fullscreen":"Apri a schermo intero",
       "chip.analyzing":"Analisi…","chip.cleaning":"Rimozione metadati…",
       "hint.detected":"I metadati dichiarano o suggeriscono un'origine AI.",
-      "hint.maybe":"C'è qualche traccia di strumenti AI. Non basta per esserne certi.",
+      "hint.maybe":"C'è una traccia di provenienza o di strumenti AI. Non basta per esserne certi.",
       "hint.metaCount":"Trovati {n} dati incorporati. Nessuna traccia evidente di AI.",
       "hint.none":"Nessun dato evidente. Questo non prova che l'immagine sia autentica.",
       "err.fileTooLarge":"File troppo grande (max {mb} MB).",
@@ -104,7 +134,7 @@
       "verdict.detected.h":"Segnali di origine AI rilevati",
       "verdict.detected.p":"Il file contiene una dichiarazione che indica un'immagine generata o modificata con AI.",
       "verdict.maybe.h":"Possibili indizi di AI",
-      "verdict.maybe.p":"Il file nomina strumenti o impostazioni usate dall'AI. È una traccia, non una prova.",
+      "verdict.maybe.p":"Il file conserva una traccia di provenienza o nomina strumenti AI. Non è una prova.",
       "verdict.clear.h":"Nessun segnale AI nei metadati",
       "verdict.clear.p":"Non ho trovato dichiarazioni o nomi di strumenti AI. Ma i metadati possono essere rimossi.",
       "ai.pill.strong":"AI","ai.pill.weak":"indizio",
@@ -131,8 +161,8 @@
       "ai.debug.bytes":"Byte campionati",
       "ai.debug.raw":"Estratto grezzo",
       "ai.action.k":"Cosa dichiara la cronologia",
-      "ai.action.created":"Immagine creata con AI",
-      "ai.action.edited":"Foto modificata o composta con AI",
+      "ai.action.created":"Immagine o risorsa creata",
+      "ai.action.edited":"Immagine modificata o composta",
       "ai.noteTitle":"Cosa può sfuggire all'analisi?",
       "ai.note":"noMeta legge le informazioni scritte nel file, non i pixel. Non può quindi vedere watermark invisibili come <b>SynthID</b>. E se qualcuno ha già cancellato i metadati, la loro assenza <b>non dimostra</b> che l'immagine sia reale.",
       "info.title":"Cosa può dirti un'immagine",
@@ -186,7 +216,7 @@
       "ui.cleanedOne":"🧹 1 image cleaned on this device",
       "ui.cleanedMany":"🧹 {n} images cleaned on this device",
       "batch.title":"{n} images","batch.processing":"Processing…","batch.error":"Error",
-      "batch.save":"Download","batch.aiBadge":"AI","batch.downloadAll":"Download all ({n})",
+      "batch.save":"Download","batch.aiBadge":"AI","batch.aiMaybeBadge":"AI?","batch.downloadAll":"Download all ({n})",
       "geo.viewMap":"Map","geo.title":"GPS location",
       "geo.openOSM":"Open in OpenStreetMap","geo.openGoogle":"Open in Google Maps",
       "geo.copy":"Copy coordinates","geo.copied":"Copied ✓",
@@ -196,7 +226,7 @@
       "btn.saveShare":"Save / Share","btn.fullscreen":"Open fullscreen",
       "chip.analyzing":"Analyzing…","chip.cleaning":"Removing metadata…",
       "hint.detected":"The metadata declares or suggests an AI origin.",
-      "hint.maybe":"There are traces of AI tools. That is not enough to be certain.",
+      "hint.maybe":"There is a provenance trace or a reference to AI tools. That is not conclusive.",
       "hint.metaCount":"Found {n} embedded data items. No clear trace of AI.",
       "hint.none":"No obvious hidden data. This does not prove the image is authentic.",
       "err.fileTooLarge":"File too large (max {mb} MB).",
@@ -224,7 +254,7 @@
       "verdict.detected.h":"AI-origin signals detected",
       "verdict.detected.p":"The file contains a statement marking it as generated or edited with AI.",
       "verdict.maybe.h":"Possible AI hints",
-      "verdict.maybe.p":"The file names tools or settings used by AI. It is a trace, not proof.",
+      "verdict.maybe.p":"The file keeps a provenance trace or names AI tools. It is not proof.",
       "verdict.clear.h":"No AI signal in metadata",
       "verdict.clear.p":"I found no declarations or AI tool names. But metadata can be removed.",
       "ai.pill.strong":"AI","ai.pill.weak":"hint",
@@ -251,8 +281,8 @@
       "ai.debug.bytes":"Sampled bytes",
       "ai.debug.raw":"Raw excerpt",
       "ai.action.k":"What the image history declares",
-      "ai.action.created":"Image created with AI",
-      "ai.action.edited":"Photo edited or composed with AI",
+      "ai.action.created":"Image or asset created",
+      "ai.action.edited":"Image edited or composed",
       "ai.noteTitle":"What can the analysis miss?",
       "ai.note":"noMeta reads information written into the file, not its pixels. It cannot see invisible watermarks such as <b>SynthID</b>. And if someone has already removed the metadata, its absence <b>does not prove</b> the image is real.",
       "info.title":"What an image can tell you",
@@ -371,13 +401,13 @@
         releaseModal=$("releaseModal"), releaseBackdrop=$("releaseBackdrop"),
         releaseClose=$("releaseClose"), releaseDone=$("releaseDone");
 
-  let batchItems=[], batchURLs=[];
+  let batchItems=[], batchURLs=[], batchGeneration=0;
 
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
                 (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
 
   let cleanedURL=null, cleanedFile=null, originalURL=null, currentFile=null,
-      lastReport=null, lastSizes=null, lastAI=null, modalMode="clean";
+      lastReport=null, lastSizes=null, lastAI=null, modalMode="clean", analysisGeneration=0;
 
   function fmtBytes(b){
     if(b<1024) return b+" B";
@@ -465,8 +495,10 @@
     // SICUREZZA — Anti-DoS: tetto massimo sui segmenti JPEG percorsi.
     let segCount=0;
     while(off<view.byteLength-1){
-      if(view.getUint8(off)!==0xFF){off++;continue;}
-      const marker=view.getUint16(off);
+      if(view.getUint8(off)!==0xFF) break;
+      while(off+1<view.byteLength && view.getUint8(off+1)===0xFF) off++;
+      if(off+1>=view.byteLength) break;
+      const marker=0xFF00|view.getUint8(off+1);
       if(marker===0xFFDA) break;
       if(marker>=0xFFD0 && marker<=0xFFD9){off+=2;continue;}
       // SICUREZZA — Se non ci sono abbastanza byte per leggere la lunghezza.
@@ -490,7 +522,12 @@
       else if(marker===0xFFE0) res.bytes+=len;
       else if(marker===0xFFE2){res.bytes+=len;seen.icc=true;}
       else if(marker===0xFFED){res.bytes+=len;seen.iptc=true;}
-      else if(marker===0xFFEB){res.bytes+=len;seen.c2pa=true;}   // APP11 → C2PA (JUMBF)
+      else if(marker===0xFFEB){
+        res.bytes+=len;
+        const jp=segStart+1<view.byteLength && view.getUint8(segStart)===0x4A && view.getUint8(segStart+1)===0x50;
+        let sample="";for(let i=segStart;i<Math.min(segStart+128,view.byteLength,off+2+len);i++)sample+=String.fromCharCode(view.getUint8(i));
+        if(jp || /c2pa|jumbf|contentauth/i.test(sample)) seen.c2pa=true;
+      }
       else if(marker>=0xFFE3&&marker<=0xFFEF){res.bytes+=len;seen.xmp=true;}
       else if(marker===0xFFFE){res.bytes+=len;seen.comment=true;}
       off+=2+len;
@@ -508,8 +545,8 @@
     const view=new DataView(buf), res={items:[],bytes:0,gps:null};
     const sig=[137,80,78,71,13,10,26,10];
     for(let i=0;i<8;i++) if(view.getUint8(i)!==sig[i]) return null;
-    let off=8; const txt=[];
-    while(off<view.byteLength){
+    let off=8, chunkCount=0; const txt=[];
+    while(off+12<=view.byteLength && chunkCount++<MAX_META_CHUNKS){
       const len=view.getUint32(off);
       let type="";for(let i=0;i<4;i++)type+=String.fromCharCode(view.getUint8(off+4+i));
       if(["tEXt","iTXt","zTXt"].includes(type)){res.bytes+=len;txt.push(type);}
@@ -536,9 +573,11 @@
     const view=new DataView(buf), res={items:[],bytes:0,gps:null};
     const cc=o=>{let s="";for(let i=0;i<4;i++)s+=String.fromCharCode(view.getUint8(o+i));return s;};
     if(view.byteLength<12 || cc(0)!=="RIFF" || cc(8)!=="WEBP") return null;
-    let off=12; const seen={xmp:false,icc:false,c2pa:false};
-    while(off+8<=view.byteLength){
+    const riffSize=view.getUint32(4,true), riffEnd=Math.min(view.byteLength,8+riffSize);
+    let off=12, chunkCount=0; const seen={xmp:false,icc:false,c2pa:false};
+    while(off+8<=riffEnd && chunkCount++<MAX_META_CHUNKS){
       const id=cc(off), size=view.getUint32(off+4,true), ps=off+8;
+      if(ps+size>riffEnd) break;
       if(id==="EXIF"){
         // il payload EXIF inizia col TIFF (II/MM); alcuni encoder antepongono "Exif\0\0".
         let ts=ps;
@@ -564,6 +603,7 @@
 
   function analyze(buf,type){
     try{
+      type=sniffImageType(buf,type);
       if(type==="image/jpeg") return parseJPEG(buf);
       if(type==="image/png")  return parsePNG(buf);
       if(type==="image/webp") return parseWEBP(buf);
@@ -589,27 +629,51 @@
       .replace(/\s+/g," ").trim().slice(0,MAX_AI_DEBUG_CHARS);
   }
 
-  async function inflateZlibBytes(u8){
-    if(!("DecompressionStream" in window)) return null;
+  async function inflateZlibBytes(u8,maxOutputBytes=MAX_SCAN_BYTES){
+    if(!("DecompressionStream" in window) || u8.byteLength>MAX_SCAN_BYTES || maxOutputBytes<=0) return null;
     try{
       const ds=new DecompressionStream("deflate");
       const writer=ds.writable.getWriter();
-      await writer.write(u8);
-      await writer.close();
-      return await new Response(ds.readable).arrayBuffer();
+      const reader=ds.readable.getReader();
+      const chunks=[];
+      let total=0, limited=false;
+      const reading=(async()=>{
+        while(total<maxOutputBytes){
+          const {value,done}=await reader.read();
+          if(done) break;
+          const bytes=new Uint8Array(value);
+          const take=Math.min(bytes.byteLength,maxOutputBytes-total);
+          if(take) chunks.push(bytes.slice(0,take));
+          total+=take;
+          if(total>=maxOutputBytes || take<bytes.byteLength){limited=true;await reader.cancel();break;}
+        }
+      })();
+      const writing=(async()=>{await writer.write(u8);await writer.close();})();
+      const [writeResult,readResult]=await Promise.allSettled([writing,reading]);
+      if(readResult.status==="rejected" || (writeResult.status==="rejected"&&!limited)) return null;
+      const out=new Uint8Array(total);let off=0;
+      chunks.forEach(c=>{out.set(c,off);off+=c.byteLength;});
+      return out.buffer;
     }catch(e){
       return null;
     }
+  }
+
+  function containsMetadataToken(text,token){
+    const pat=token.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    return new RegExp("(^|[^a-z0-9])"+pat+"(?=$|[^a-z0-9])","i").test(text);
   }
 
   async function aiScan(buf,type){
     const view=new DataView(buf), parts=[];
     const flags={c2paBox:false,compressedTextKeys:[],decompressedTextKeys:[],failedCompressedTextKeys:[]};
     const debug={chunks:[],rawSample:"",scanBytes:0};
-    let scanned=0;
+    let scanned=0, textChars=0;
     function addText(s){
-      if(!s) return;
-      parts.push(String(s).slice(0,MAX_SCAN_BYTES));
+      if(!s || textChars>=MAX_SCAN_BYTES) return;
+      const text=String(s).slice(0,MAX_SCAN_BYTES-textChars);
+      if(!text) return;
+      parts.push(text); textChars+=text.length;
     }
     function decodeBytes(u8){
       const out=[];
@@ -628,30 +692,42 @@
       return out.join("\n");
     }
     function push(start,end){
-      if(scanned>=MAX_SCAN_BYTES) return;
+      if(scanned>=MAX_SCAN_BYTES) return "";
       start=Math.max(0,start); end=Math.min(end,view.byteLength);
       const take=Math.min(end-start,MAX_SCAN_BYTES-scanned);
-      if(take<=0) return;
-      addText(decodeBytes(new Uint8Array(buf,start,take)));
+      if(take<=0) return "";
+      const decoded=decodeBytes(new Uint8Array(buf,start,take));
+      addText(decoded);
       scanned+=take;
+      return decoded;
+    }
+    function takeCompressed(start,end){
+      start=Math.max(0,start);end=Math.min(end,view.byteLength);
+      const size=end-start;
+      if(size<=0 || size>MAX_SCAN_BYTES-scanned) return null;
+      scanned+=size;
+      return new Uint8Array(buf,start,size);
     }
     function zero(start,end){ for(let i=start;i<end;i++) if(view.getUint8(i)===0) return i; return -1; }
-    function textRange(start,end){ return decodeBytes(new Uint8Array(buf,start,Math.max(0,end-start))).trim(); }
     function latin1Range(start,end){
       let s="";
       for(let i=start;i<end;i++) s+=String.fromCharCode(view.getUint8(i));
       return s.trim();
     }
     async function readPngText(kind,ps,len){
-      const end=Math.min(ps+len,view.byteLength), z=zero(ps,end);
-      const key=z>ps ? latin1Range(ps,z) : "";
-      debug.chunks.push({type:kind,key:key||"(empty)",bytes:Math.max(0,end-ps),compressed:kind==="zTXt"});
-      if(kind==="tEXt" && z>ps){ addText(key+" "+textRange(z+1,end)); return; }
+      const end=Math.min(ps+len,view.byteLength);
+      const keyEnd=Math.min(end,ps+80), keyZero=zero(ps,keyEnd);
+      const key=keyZero>ps ? latin1Range(ps,keyZero) : "";
+      const z=keyZero;
+      const isCompressed=kind==="zTXt" || (kind==="iTXt" && z>ps && z+1<end && view.getUint8(z+1)===1);
+      debug.chunks.push({type:kind,key:key||"(empty)",bytes:Math.max(0,end-ps),compressed:isCompressed});
+      if(kind==="tEXt" && z>ps){ push(ps,end); return; }
       if(kind==="zTXt" && z>ps){
         const method=z+1<end ? view.getUint8(z+1) : -1;
-        const compressed=new Uint8Array(buf,z+2,Math.max(0,end-z-2));
-        const inflated=method===0 ? await inflateZlibBytes(compressed) : null;
+        const compressed=takeCompressed(z+2,end);
+        const inflated=compressed && method===0 ? await inflateZlibBytes(compressed,MAX_SCAN_BYTES-scanned) : null;
         if(inflated){
+          scanned+=inflated.byteLength;
           flags.decompressedTextKeys.push(key||"zTXt");
           addText(key+" "+decodeBytes(new Uint8Array(inflated)));
         }else{
@@ -664,15 +740,16 @@
       if(kind==="iTXt" && z>ps && z+3<end){
         const compressed=view.getUint8(z+1)===1;
         let p=z+3; // compression flag + method
-        const langEnd=zero(p,end); if(langEnd<0) return;
+        const langEnd=zero(p,Math.min(end,p+256)); if(langEnd<0) return;
         p=langEnd+1;
-        const translatedEnd=zero(p,end); if(translatedEnd<0) return;
+        const translatedEnd=zero(p,Math.min(end,p+1024)); if(translatedEnd<0) return;
         p=translatedEnd+1;
         if(compressed){
           const method=view.getUint8(z+2);
-          const packed=new Uint8Array(buf,p,Math.max(0,end-p));
-          const inflated=method===0 ? await inflateZlibBytes(packed) : null;
+          const packed=takeCompressed(p,end);
+          const inflated=packed && method===0 ? await inflateZlibBytes(packed,MAX_SCAN_BYTES-scanned) : null;
           if(inflated){
+            scanned+=inflated.byteLength;
             flags.decompressedTextKeys.push(key||"iTXt");
             addText(key+" "+decodeBytes(new Uint8Array(inflated)));
           }else{
@@ -680,37 +757,51 @@
             flags.failedCompressedTextKeys.push(key||"iTXt");
             addText(key+" iTXt compressed text metadata");
           }
-        }else addText(key+" "+textRange(p,end));
+        }else push(ps,end);
       }
     }
     try{
+      type=sniffImageType(buf,type);
       if(type==="image/jpeg"){
-        let off=2;
+        let off=2, app11Text="";
         // SICUREZZA — Anti-DoS: tetto segmenti come in parseJPEG.
         let segCount=0;
         while(off<view.byteLength-1){
-          if(view.getUint8(off)!==0xFF){off++;continue;}
-          const marker=view.getUint16(off);
+          if(view.getUint8(off)!==0xFF) break;
+          while(off+1<view.byteLength && view.getUint8(off+1)===0xFF) off++;
+          if(off+1>=view.byteLength) break;
+          const marker=0xFF00|view.getUint8(off+1);
           if(marker===0xFFDA||marker===0xFFD9) break;
           if(marker>=0xFFD0&&marker<=0xFFD9){off+=2;continue;}
           // SICUREZZA — Bound-check: servono 4 byte per leggere la lunghezza.
           if(off+4>view.byteLength) break;
           const len=view.getUint16(off+2);
           if(len<2 || segCount++>MAX_JPEG_SEG) break;
-          if((marker>=0xFFE0&&marker<=0xFFEF)||marker===0xFFFE){
-            push(off+4, off+2+len);
-            if(marker===0xFFEB) flags.c2paBox=true; // APP11 → contenitore JUMBF/C2PA
+          if(marker===0xFFE1||marker===0xFFED||marker===0xFFEB||marker===0xFFFE){
+            const segmentText=push(off+4, off+2+len).toLowerCase();
+            if(marker===0xFFEB){
+              const payloadStart=off+4, payloadEnd=Math.min(off+2+len,view.byteLength);
+              const hasJP=payloadEnd-payloadStart>=2 && view.getUint8(payloadStart)===0x4A && view.getUint8(payloadStart+1)===0x50;
+              if(hasJP || /c2pa|jumbf|contentauth/.test(segmentText)) flags.c2paBox=true;
+              // I JUMBF grandi sono divisi in APP11 consecutivi. Ricompone il
+              // payload (saltando l'header JP/istanza/sequenza) senza newline,
+              // così i token al confine fra segmenti non vanno persi.
+              const dataStart=hasJP&&payloadEnd-payloadStart>=8 ? payloadStart+8 : payloadStart;
+              const take=Math.min(payloadEnd-dataStart,MAX_SCAN_BYTES-app11Text.length);
+              if(take>0) app11Text+=latin1Range(dataStart,dataStart+take);
+            }
           }
           off+=2+len;
         }
+        addText(app11Text);
       }else if(type==="image/png"){
-        let off=8;
-        while(off+12<=view.byteLength){
+        let off=8, chunkCount=0;
+        while(off+12<=view.byteLength && chunkCount++<MAX_META_CHUNKS){
           const len=view.getUint32(off);
           let tt="";for(let i=0;i<4;i++)tt+=String.fromCharCode(view.getUint8(off+4+i));
           const ps=off+8;
           if(["tEXt","iTXt","zTXt"].includes(tt)) await readPngText(tt,ps,len);
-          else if(["eXIf","iCCP","caBX"].includes(tt)) push(ps, ps+len);
+          else if(["eXIf","caBX"].includes(tt)) push(ps, ps+len);
           if(tt==="caBX") flags.c2paBox=true; // chunk privato C2PA
           if(tt==="IEND") break;
           off+=12+len;
@@ -718,10 +809,12 @@
       }else if(type==="image/webp"){
         const cc=o=>{let s="";for(let i=0;i<4;i++)s+=String.fromCharCode(view.getUint8(o+i));return s;};
         if(view.byteLength>=12 && cc(0)==="RIFF" && cc(8)==="WEBP"){
-          let off=12;
-          while(off+8<=view.byteLength){
+          const riffEnd=Math.min(view.byteLength,8+view.getUint32(4,true));
+          let off=12, chunkCount=0;
+          while(off+8<=riffEnd && chunkCount++<MAX_META_CHUNKS){
             const id=cc(off), size=view.getUint32(off+4,true), ps=off+8;
-            if(id==="EXIF"||id==="XMP "||id==="ICCP"||id==="C2PA") push(ps, ps+size);
+            if(ps+size>riffEnd) break;
+            if(id==="EXIF"||id==="XMP "||id==="C2PA") push(ps, ps+size);
             if(id==="C2PA") flags.c2paBox=true;   // manifest C2PA in WebP
             off=ps+size+(size&1);
           }
@@ -746,13 +839,14 @@
     if(hasC2PA){
       const c2paEdited=lower.includes("c2pa.edited") || lower.includes("c2pa.placed");
       const c2paCreated=lower.includes("c2pa.created");
-      const c2paStrong=c2paEdited||c2paCreated;
-      if(c2paStrong) strong=true; else maybe=true;
-      signals.push({strong:c2paStrong,ico:"🔏",kKey:"ai.c2pa.k",vKey:"ai.c2pa.v"});
+      // Le azioni C2PA descrivono la provenienza, non provano da sole l'uso di AI.
+      // Il verdetto diventa forte solo con DigitalSourceType/generatore/frase AI.
+      maybe=true;
+      signals.push({strong:false,ico:"🔏",kKey:"ai.c2pa.k",vKey:"ai.c2pa.v"});
       if(c2paEdited)
-        signals.push({strong:true,ico:"✏️",kKey:"ai.action.k",vKey:"ai.action.edited"});
+        signals.push({strong:false,ico:"✏️",kKey:"ai.action.k",vKey:"ai.action.edited"});
       else if(c2paCreated)
-        signals.push({strong:true,ico:"✨",kKey:"ai.action.k",vKey:"ai.action.created"});
+        signals.push({strong:false,ico:"✨",kKey:"ai.action.k",vKey:"ai.action.created"});
     }
 
     // 2) Etichetta IPTC DigitalSourceType (URI o token finale, anche snake_case di Google Merchant).
@@ -785,7 +879,7 @@
       ["grok","Grok (xAI)"],["qwen image","Qwen Image"],["seedream","Seedream"],["krea ai","Krea AI"],["canva magic media","Canva Magic Media"],["playground ai","Playground AI"]
     ];
     const foundGens=[];
-    for(const [tok,label] of gens){ if(lower.includes(tok)&&!foundGens.includes(label)) foundGens.push(label); }
+    for(const [tok,label] of gens){ if(containsMetadataToken(lower,tok)&&!foundGens.includes(label)) foundGens.push(label); }
     // Parametri di generazione tipici (tEXt/iTXt/XMP) di Stable Diffusion / ComfyUI.
     if((lower.includes("sampler:") && lower.includes("steps:")) || (lower.includes("cfg scale") && lower.includes("seed:")))
       if(!foundGens.includes("Stable Diffusion")) foundGens.push("Stable Diffusion");
@@ -977,8 +1071,19 @@
   // Punto di ingresso: valida il file, poi analizza i metadati. La pulizia
   // avviene solo su richiesta dell'utente (doClean).
   async function handleFile(file){
-    if(!file || !isAllowedType(file.type)) return;   // solo immagini raster (no SVG)
+    if(!isAllowedFile(file)) return;   // solo immagini raster (no SVG)
+    const generation=++analysisGeneration;
+    ++batchGeneration; // un caricamento singolo invalida un eventuale batch in corso
+    if(modal.classList.contains("open")) closeModal();
+    batch.classList.remove("show"); batchURLs.forEach(u=>URL.revokeObjectURL(u));
+    batchURLs=[]; batchItems=[]; batchList.innerHTML="";
+    lastReport=null; lastAI=null; lastSizes=null; cleanedFile=null;
+    choiceHint.textContent="";
+    if(cleanedURL){URL.revokeObjectURL(cleanedURL);cleanedURL=null;}
     if(file.size>MAX_FILE_BYTES){
+      currentFile=null;
+      if(originalURL){URL.revokeObjectURL(originalURL);originalURL=null;}
+      preview.removeAttribute("src");
       drop.classList.add("hidden"); stage.classList.add("show");
       frame.classList.remove("scanning"); chip.classList.remove("show");
       choice.style.visibility="visible";
@@ -994,11 +1099,26 @@
     preview.src=originalURL;
     currentFile=file;
 
-    const buf=await file.arrayBuffer();
-    lastReport=analyze(buf,file.type);
-    lastAI=await analyzeAI(buf,file.type);
-    await new Promise(r=>setTimeout(r,650));
+    try{
+      const buf=await file.arrayBuffer();
+      if(generation!==analysisGeneration || currentFile!==file) return;
+      const detectedType=sniffImageType(buf,file.type);
+      if(!detectedType && !isAllowedType(file.type)) throw new Error("Formato non riconosciuto");
+      const report=analyze(buf,detectedType||file.type);
+      const ai=await analyzeAI(buf,detectedType||file.type);
+      // Latest-wins: reset, paste o una nuova selezione non possono essere
+      // sovrascritti dal completamento tardivo di questa analisi.
+      if(generation!==analysisGeneration || currentFile!==file) return;
+      lastReport=report; lastAI=ai;
+    }catch(e){
+      if(generation!==analysisGeneration || currentFile!==file) return;
+      frame.classList.remove("scanning"); chip.classList.remove("show");
+      choice.style.visibility="visible";
+      choiceHint.textContent=t("err.format");
+      return;
+    }
 
+    if(generation!==analysisGeneration || currentFile!==file) return;
     frame.classList.remove("scanning"); chip.classList.remove("show");
     setChoiceHint();
     choice.style.visibility="visible";
@@ -1007,12 +1127,20 @@
   /* ====================== CARICAMENTO MULTIPLO (BATCH) ====================== */
   // 1 file → flusso dettagliato (pulizia/analisi); 2+ file → pulizia in serie.
   function handleFiles(fileList){
-    const list=[...fileList].filter(f=>isAllowedType(f.type) && f.size<=MAX_FILE_BYTES);
+    const candidates=[...fileList].filter(isAllowedFile);
+    if(!candidates.length) return;
+    if(candidates.length===1) return handleFile(candidates[0]);
+    const list=candidates.filter(f=>f.size<=MAX_FILE_BYTES);
     if(!list.length) return;
-    if(list.length===1) handleFile(list[0]); else handleBatch(list);
+    return list.length===1 ? handleFile(list[0]) : handleBatch(list);
   }
 
   async function handleBatch(list){
+    const generation=++batchGeneration;
+    ++analysisGeneration; // il batch invalida una scansione singola pendente
+    currentFile=null; lastReport=null; lastAI=null; lastSizes=null; cleanedFile=null;
+    if(originalURL){URL.revokeObjectURL(originalURL);originalURL=null;}
+    if(cleanedURL){URL.revokeObjectURL(cleanedURL);cleanedURL=null;}
     drop.classList.add("hidden"); stage.classList.remove("show"); batch.classList.add("show");
     batchTitle.textContent=t("batch.title",{n:list.length});
     batchList.innerHTML="";
@@ -1028,28 +1156,36 @@
       batchItems.push({file,row});
     });
     // Elaborazione in serie per non saturare la memoria (un canvas alla volta).
-    for(const it of batchItems){ await processBatchItem(it); }
+    for(const it of batchItems){
+      if(generation!==batchGeneration) return;
+      await processBatchItem(it,generation);
+    }
+    if(generation!==batchGeneration) return;
     const ready=batchItems.filter(x=>x.url).length;
     batchDownloadAll.disabled = ready===0;
     batchDownloadAll.textContent=t("batch.downloadAll",{n:ready});
   }
 
-  async function processBatchItem(it){
+  async function processBatchItem(it,generation){
     const {file,row}=it;
     const thumb=row.querySelector(".bthumb"), size=row.querySelector(".bsize"),
           act=row.querySelector(".bact"), name=row.querySelector(".bname");
     try{
       const buf=await file.arrayBuffer();
+      if(generation!==batchGeneration) return;
       const ai=await analyzeAI(buf,file.type);
+      if(generation!==batchGeneration) return;
       const cleaned=await cleanImage(file);
+      if(generation!==batchGeneration) return;
       const cf=new File([cleaned.blob], renameClean(file.name,cleaned.type), {type:cleaned.type});
       const url=URL.createObjectURL(cleaned.blob); batchURLs.push(url);
       it.cleanedFile=cf; it.url=url;
       const img=document.createElement("img"); img.alt=""; img.src=url;
       thumb.innerHTML=""; thumb.appendChild(img);
       size.textContent=fmtBytes(file.size)+" → "+fmtBytes(cleaned.blob.size);
-      if(ai.level==="detected"){
-        const b=document.createElement("span"); b.className="bbadge ai"; b.textContent=t("batch.aiBadge"); name.appendChild(b);
+      if(ai.level!=="clear"){
+        const b=document.createElement("span"); b.className="bbadge ai";
+        b.textContent=t(ai.level==="detected"?"batch.aiBadge":"batch.aiMaybeBadge"); name.appendChild(b);
       }
       incCount();
       const d=document.createElement("button"); d.className="bdl"; d.textContent=t("batch.save");
@@ -1061,6 +1197,7 @@
   }
 
   function batchClear(){
+    ++batchGeneration;
     batch.classList.remove("show"); drop.classList.remove("hidden");
     fileInput.value="";
     batchURLs.forEach(u=>URL.revokeObjectURL(u)); batchURLs=[]; batchItems=[];
@@ -1069,24 +1206,26 @@
 
   async function doClean(){
     if(!currentFile) return;
+    const file=currentFile, generation=analysisGeneration;
     choice.style.visibility="hidden";
     chip.classList.add("show"); chiptx.textContent=t("chip.cleaning"); frame.classList.add("scanning");
     let cleaned;
-    try{ cleaned=await cleanImage(currentFile); }
+    try{ cleaned=await cleanImage(file); }
     catch(e){
+      if(generation!==analysisGeneration || currentFile!==file) return;
       frame.classList.remove("scanning"); chip.classList.remove("show");
       choice.style.visibility="visible";
       choiceHint.textContent=/pixel/.test(e&&e.message) ? t("err.pixels") : t("err.format");
       return;
     }
-    await new Promise(r=>setTimeout(r,400));
+    if(generation!==analysisGeneration || currentFile!==file) return;
     frame.classList.remove("scanning"); chip.classList.remove("show");
 
-    cleanedFile=new File([cleaned.blob], renameClean(currentFile.name,cleaned.type), {type:cleaned.type});
+    cleanedFile=new File([cleaned.blob], renameClean(file.name,cleaned.type), {type:cleaned.type});
     if(cleanedURL)URL.revokeObjectURL(cleanedURL);
     cleanedURL=URL.createObjectURL(cleaned.blob);
     preview.src=cleanedURL;
-    lastSizes={orig:currentFile.size, clean:cleaned.blob.size, w:cleaned.w, h:cleaned.h};
+    lastSizes={orig:file.size, clean:cleaned.blob.size, w:cleaned.w, h:cleaned.h};
     choice.style.visibility="visible";
     incCount();   // +1 immagine ripulita su questo dispositivo (solo locale)
 
@@ -1096,7 +1235,7 @@
   }
 
   function showAnalysis(){
-    if(!currentFile) return;
+    if(!currentFile || !lastAI) return;
     modalMode="analyze";
     populateModal();
     openModal();
@@ -1261,10 +1400,10 @@
     releaseModal.classList.add("open");
     releaseModal.setAttribute("aria-hidden","false");
     document.body.classList.add("lock");
-    if(markSeen) writeStore(RELEASE_SEEN_KEY,APP_VERSION);
+    if(markSeen) writeStore(RELEASE_SEEN_KEY,PUBLIC_RELEASE_VERSION);
   }
   function closeRelease(){
-    writeStore(RELEASE_SEEN_KEY,APP_VERSION);
+    writeStore(RELEASE_SEEN_KEY,PUBLIC_RELEASE_VERSION);
     releaseModal.classList.remove("open");
     releaseModal.setAttribute("aria-hidden","true");
     if(!modal.classList.contains("open") && !geoModal.classList.contains("open") && !infoModal.classList.contains("open"))
@@ -1272,17 +1411,27 @@
   }
 
   function doReset(){
+    ++analysisGeneration;
+    ++batchGeneration;
     closeModal();
     stage.classList.remove("show"); drop.classList.remove("hidden");
+    frame.classList.remove("scanning"); chip.classList.remove("show");
+    choice.style.visibility="hidden"; choiceHint.textContent="";
     fileInput.value="";
     if(cleanedURL){URL.revokeObjectURL(cleanedURL);cleanedURL=null;}
     if(originalURL){URL.revokeObjectURL(originalURL);originalURL=null;}
+    preview.removeAttribute("src");
     cleanedFile=null; currentFile=null; lastReport=null; lastSizes=null; lastAI=null;
   }
 
   /* ====================== EVENTI ====================== */
   drop.addEventListener("click",()=>fileInput.click());
-  fileInput.addEventListener("change",e=>{ if(e.target.files.length) handleFiles(e.target.files); });
+  fileInput.addEventListener("change",e=>{
+    const files=[...(e.target.files||[])];
+    // Consente di riselezionare subito anche lo stesso file/nome.
+    e.target.value="";
+    if(files.length) handleFiles(files);
+  });
   reset.addEventListener("click",doReset);
   batchReset.addEventListener("click",batchClear);
   batchDownloadAll.addEventListener("click",async()=>{
@@ -1322,11 +1471,11 @@
   ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
   ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
   drop.addEventListener("drop",e=>{ if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
-  window.addEventListener("paste",e=>{ const f=e.clipboardData&&e.clipboardData.files&&e.clipboardData.files[0]; if(f&&isAllowedType(f.type)) handleFile(f); });
+  window.addEventListener("paste",e=>{ const f=e.clipboardData&&e.clipboardData.files&&e.clipboardData.files[0]; if(isAllowedFile(f)) handleFile(f); });
 
   /* ====================== AVVIO ====================== */
   applyTheme();
   applyStaticI18n();
   renderCount();
-  if(readStore(RELEASE_SEEN_KEY)!==APP_VERSION) requestAnimationFrame(()=>openRelease(true));
+  if(readStore(RELEASE_SEEN_KEY)!==PUBLIC_RELEASE_VERSION) requestAnimationFrame(()=>openRelease(true));
 })();

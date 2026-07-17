@@ -46,8 +46,14 @@ origine artificiale in quattro categorie:
    scale, steps, riferimenti a nodi ComfyUI. Più parametri coerenti
    compaiono insieme, più il segnale è affidabile.
 
-Il verdetto è a tre livelli: **rilevato** (segnale forte, es. C2PA o
-IPTC), **indizio** (tracce deboli), **nessun segnale** (metadati puliti).
+Il formato effettivo viene riconosciuto dalla firma binaria del file, non solo
+dal MIME o dall'estensione: anche un WebP scaricato con nome `.png` viene quindi
+analizzato con il parser corretto. Ogni nuova selezione invalida inoltre
+l'analisi precedente, evitando che risultati asincroni si sovrascrivano.
+
+Il verdetto è a tre livelli: **rilevato** (segnale forte, es. un valore IPTC
+generativo o C2PA associato a un generatore noto), **indizio** (tracce deboli,
+come un contenitore C2PA generico), **nessun segnale** (metadati puliti).
 
 ## Cosa NON può fare (e perché)
 

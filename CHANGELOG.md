@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.12.1 — 2026-07-17
+
+- Corretto il rilevamento dell'origine AI nelle scansioni consecutive: ogni
+  nuova selezione invalida in modo sicuro i risultati asincroni precedenti.
+- Il formato reale viene ora riconosciuto dalla firma binaria, permettendo di
+  analizzare correttamente anche immagini WebP salvate o nominate come PNG.
+- Rafforzata l'analisi di metadati PNG, JPEG, WebP e C2PA con ricomposizione dei
+  frammenti, limiti cumulativi e decompressione bounded contro input malevoli.
+- Distinti i contenitori C2PA generici dagli indicatori forti associati a un
+  generatore AI noto, riducendo i falsi positivi.
+- Migliorato l'aggiornamento della cache PWA per distribuire subito la nuova
+  versione online mantenendo il fallback offline.
+
 ## v1.12.0 — 2026-07-17
 
 - Trasformata la webapp in PWA installabile con manifest e service worker.
