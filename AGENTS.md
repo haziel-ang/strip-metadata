@@ -64,6 +64,11 @@ GitHub Pages. Do not require server-side code or environment variables.
 - Update `SECURITY.md` when a security control or known limitation changes.
 - Record user-visible releases in `CHANGELOG.md` and keep `package.json`
   versioning consistent with the release.
+- Before committing or publishing a release, always ask the user for explicit
+  confirmation. Also ask which changelog is required: technical or public.
+- A technical changelog belongs only in `CHANGELOG.md`. A public changelog is
+  shown in the in-app release popup and must be short, concrete, and free of
+  implementation details. Do not silently turn one type into the other.
 
 ## Local-only paths
 

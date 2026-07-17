@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.12.0 — 2026-07-17
+
+- Trasformata la webapp in PWA installabile con manifest e service worker.
+- Aggiunto funzionamento offline tramite cache dei soli asset statici locali;
+  le immagini dell'utente non vengono mai inserite nella cache.
+- Aggiunto set coordinato di icone per favicon, iOS, Android/desktop e
+  launcher adattivi (`maskable`).
+
 ## v1.11.0 — 2026-06-28
 
 - Analisi AI PNG asincrona con decompressione locale dei chunk `zTXt` e
