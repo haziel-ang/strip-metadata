@@ -19,11 +19,34 @@ serve a garantirlo.
 ## Cosa fa
 
 **Pulizia.** Ricodifica l'immagine tramite `<canvas>` e la riesporta senza
-EXIF (GPS, fotocamera, data, software), XMP, IPTC, profilo colore ICC e
-manifest **C2PA / Content Credentials**. Nei JPEG rimuove anche i marker
-APP e COM che il browser reinserisce dopo la codifica, così il file
-esportato è davvero pulito anche se lo ricarichi. I file HEIC vengono
-convertiti in JPG. Supporta JPG, PNG, WebP, HEIC.
+EXIF (GPS, fotocamera, data, software, autore), XMP, IPTC, profilo colore ICC e
+manifest **C2PA / Content Credentials**. Rimuove anche i segmenti che il browser
+reinserisce dopo la codifica: i marker APP e COM nei JPEG, il chunk ICCP nei
+WebP. Il file esportato è davvero pulito anche se lo ricarichi. I file HEIC
+vengono convertiti in JPG. Supporta JPG, PNG, WebP, HEIC.
+
+**Rimozione selettiva.** Di default viene rimosso tutto. Se però vuoi
+*conservare* qualcosa — la posizione GPS di uno scatto, il tuo nominativo come
+autore — apri **Analizza immagine**: ogni voce conservabile ha una casella,
+spuntata significa «rimuovi». Basta togliere la spunta alle voci da tenere.
+
+Sono conservabili solo i campi EXIF di base, che noMeta **riscrive da zero**:
+posizione GPS, fotocamera, data e ora, software, autore, copyright. Tutto il
+resto viene sempre rimosso — un profilo ICC reinserito falserebbe i colori dopo
+la ricodifica, e un manifest C2PA sarebbe comunque una firma non più valida.
+
+Puoi scegliere **come** viene costruito il file pulito:
+
+- **Ricodifica** (predefinito) — come sempre: sopravvivono solo i pixel, più i
+  campi che noMeta ha riscritto. Nulla di sconosciuto passa. Il JPEG viene
+  ricompresso.
+- **Senza ricodifica** — riscrive solo il contenitore e copia i dati immagine
+  byte per byte: qualità identica all'originale. In cambio è un approccio a
+  *blacklist*: sopravvive ciò che noMeta non riconosce. Non disponibile per HEIC,
+  che va per forza convertito.
+
+Con più immagini insieme (modalità batch) la pulizia resta totale: la selezione
+è disponibile solo sul singolo file.
 
 **Analisi AI.** Legge i metadati del file (non i pixel) e cerca segnali di
 origine artificiale in quattro categorie:
@@ -105,12 +128,12 @@ DevTools → Network durante l'uso: vedrai **zero richieste**.
 
 ## Formati supportati
 
-| Formato | Pulizia | Analisi AI | Note |
-|---|---|---|---|
-| JPEG | Sì | Sì | Rimuove anche marker APP/COM reinseriti dal browser |
-| PNG | Sì | Sì | Legge blocchi tEXt, iTXt, zTXt (anche compressi) |
-| WebP | Sì | Sì | Rileva EXIF, XMP, C2PA nel contenitore RIFF |
-| HEIC | Sì (→JPG) | Parziale | Convertito in JPG; metadati rimossi |
+| Formato | Pulizia | Analisi AI | Selezione | Senza ricodifica | Note |
+|---|---|---|---|---|---|
+| JPEG | Sì | Sì | Sì | Sì | Rimuove anche marker APP/COM reinseriti dal browser |
+| PNG | Sì | Sì | Sì | Sì | Legge blocchi tEXt, iTXt, zTXt (anche compressi) |
+| WebP | Sì | Sì | Sì | Sì | Rileva EXIF, XMP, C2PA nel contenitore RIFF |
+| HEIC | Sì (→JPG) | Parziale | No | No | Convertito in JPG; metadati rimossi |
 
 ## Privacy
 
@@ -155,6 +178,8 @@ puoi copiare e modificare, citando l'autore. Vedi [`LICENSE`](./LICENSE).
 | `react.html` | Shell React/TypeScript separata per migrare senza sostituire la UI stabile |
 | `src/metadata/ai.ts` | Primo core TypeScript testabile per analisi AI metadata |
 | `src/metadata/ai.test.ts` | Fixture in memoria per PNG `tEXt`, `zTXt`, `iTXt` compressi |
+| `src/metadata/exif.ts` | Scrittore/lettore EXIF: serializza le voci da conservare |
+| `src/metadata/exif.test.ts` | Round-trip scrittore↔lettore, GPS, autore, orientamento |
 | `SECURITY.md` | Hardening CSP, anti-XSS, anti-clickjacking |
 | `RESEARCH.md` | Ricerca su provenienza AI, C2PA, IPTC, SynthID |
 | `CHANGELOG.md` | Cronologia versioni |

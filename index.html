@@ -2,7 +2,7 @@
 <!--
   ============================================================================
    Pulisci — Rimozione metadati & analisi origine AI
-   Versione : 1.12.1
+   Versione : 1.13.0
    Anno     : 2026
    Sviluppo : profxeni
    Licenza  : CC BY 4.0 — profxeni (copia e remix con citazione dell'autore)
@@ -253,11 +253,11 @@
     font-size:.78rem;padding:6px 11px;border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .bdl:hover{background:var(--surface-2)}
   .batch-actions{display:flex;flex-direction:column;gap:10px}
-  /* GPS: riga cliccabile + popup mappa */
-  .m-row.geo-row{cursor:pointer;transition:border-color .2s,background .2s}
-  .m-row.geo-row:hover{border-color:var(--accent)}
-  .maplink{font-size:.66rem;font-weight:700;letter-spacing:.02em;color:var(--accent-deep);
-    background:var(--accent-soft);padding:2px 8px;border-radius:100px}
+  /* GPS: solo il link apre la mappa — la riga ospita la casella di selezione */
+  .m-row.geo-row{transition:border-color .2s,background .2s}
+  .maplink{font:inherit;font-size:.66rem;font-weight:700;letter-spacing:.02em;color:var(--accent-deep);
+    background:var(--accent-soft);padding:2px 8px;border-radius:100px;border:0;cursor:pointer}
+  .maplink:hover{background:var(--accent);color:var(--paper)}
   .geo-card{max-width:420px}
   .geo-pin{font-size:22px;background:var(--accent-soft)!important}
   #geoCoords{font-variant-numeric:tabular-nums}
@@ -318,6 +318,22 @@
   .m-row.warn .tx .v{color:var(--warn);text-decoration-color:var(--warn-strike)}
   .pill{font-size:.66rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--accent-deep);
     background:var(--accent-soft);padding:2px 7px;border-radius:100px}
+  /* Voce conservata: niente barratura, il dato è ancora nel file */
+  .pill.kept{color:var(--ink-soft);background:var(--ghost)}
+  .m-row.kept .tx .v{text-decoration:none}
+  /* Selezione: spuntata = verrà rimossa */
+  .m-keep-toggle{flex:0 0 auto;display:flex;align-items:center;gap:6px;cursor:pointer;
+    font-size:.72rem;font-weight:600;color:var(--ink-soft);user-select:none;padding-top:2px}
+  .m-keep-toggle input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;margin:0}
+  .m-keep{margin:-8px 0 20px}
+  .m-keep-sum{font-size:.83rem;color:var(--ink-soft);margin:0 0 10px}
+  .m-engine{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+  .m-engine-t{font-size:.78rem;font-weight:700;margin:0 0 8px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft)}
+  .m-engine-opt{display:flex;gap:9px;align-items:flex-start;padding:7px 8px;border-radius:9px;cursor:pointer;border:1px solid transparent}
+  .m-engine-opt.on{background:var(--field);border-color:var(--line)}
+  .m-engine-opt input{margin:3px 0 0;accent-color:var(--accent);cursor:pointer;flex:0 0 auto}
+  .m-engine-opt b{display:block;font-size:.85rem;font-weight:600}
+  .m-engine-opt em{display:block;font-style:normal;font-size:.76rem;color:var(--ink-soft);margin-top:2px}
   .m-empty{padding:14px;text-align:center;color:var(--ink-soft);font-size:.9rem;background:var(--surface);border-radius:12px;border:1px solid var(--line);margin-bottom:20px}
   .m-actions{display:flex;flex-direction:column;gap:10px}
 
@@ -369,8 +385,6 @@
   .release-card{width:min(470px,calc(100vw - 32px));padding:0;overflow:hidden}
   .release-card .modal-head{padding:22px 58px 18px 22px;margin:0;border-bottom:1px solid var(--line)}
   .release-card .modal-head .ok{font-size:1.25rem;color:#fff}
-  .release-beta{display:inline-flex;margin-top:7px;padding:4px 8px;border-radius:999px;background:var(--maybe-bg);
-    color:var(--maybe-ink);font-size:.68rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
   .release-body{padding:20px 22px 22px}
   .release-lead{font-family:"Fraunces",serif;font-size:1.12rem;line-height:1.4;margin-bottom:16px}
   .release-list{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:19px}
@@ -507,6 +521,7 @@
     <div id="mAIWrap"></div>
     <div class="m-section-title" id="mMetaTitle"></div>
     <div class="m-meta" id="mMeta"></div>
+    <div class="m-keep" id="mKeep" hidden></div>
     <div class="m-actions" id="mActions"></div>
   </div>
 </div>
@@ -580,15 +595,14 @@
       <div>
         <h3 id="releaseTitle" data-i18n="release.title"></h3>
         <p data-i18n="release.sub"></p>
-        <span class="release-beta" data-i18n="release.beta"></span>
       </div>
     </div>
     <div class="release-body">
       <p class="release-lead" data-i18n="release.lead"></p>
       <ul class="release-list">
-        <li><span class="release-ico">＋</span><div><b data-i18n="release.installTitle"></b><p data-i18n="release.installText"></p></div></li>
-        <li><span class="release-ico">⌁</span><div><b data-i18n="release.offlineTitle"></b><p data-i18n="release.offlineText"></p></div></li>
-        <li><span class="release-ico">◇</span><div><b data-i18n="release.iconTitle"></b><p data-i18n="release.iconText"></p></div></li>
+        <li><span class="release-ico">☑</span><div><b data-i18n="release.pickTitle"></b><p data-i18n="release.pickText"></p></div></li>
+        <li><span class="release-ico">⌁</span><div><b data-i18n="release.defaultTitle"></b><p data-i18n="release.defaultText"></p></div></li>
+        <li><span class="release-ico">◇</span><div><b data-i18n="release.qualityTitle"></b><p data-i18n="release.qualityText"></p></div></li>
       </ul>
       <button class="btn btn-primary" id="releaseDone" type="button" data-i18n="release.done"></button>
     </div>
@@ -609,6 +623,6 @@
   </div>
 </div>
 
-<script src="app.js?v=1.12.1" defer></script>
+<script src="app.js?v=1.13.0" defer></script>
 </body>
 </html>

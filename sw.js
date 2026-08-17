@@ -1,9 +1,9 @@
 /* noMeta application shell — no user image is ever cached here. */
-const CACHE_NAME = "nometa-shell-v1.12.1";
+const CACHE_NAME = "nometa-shell-v1.13.0";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./app.js?v=1.12.1",
+  "./app.js?v=1.13.0",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/favicon-32.png",
