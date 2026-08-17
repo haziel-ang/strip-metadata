@@ -26,6 +26,19 @@ né telemetria. Di seguito **ogni misura di sicurezza e cosa serve a evitare**.
 
 - **Watermark nei pixel (es. Google SynthID)**: non sono né rilevabili né rimovibili
   lato browser. La pulizia rimuove i metadati, non i watermark di pixel.
+- **Motore «senza ricodifica»**: è una scelta esplicita dell'utente e cambia il
+  modello di garanzia. La ricodifica su canvas è una **whitelist** — sopravvivono
+  solo i pixel, più i campi EXIF che noMeta riscrive lei stessa da valori già
+  interpretati. Il taglio senza ricodifica è invece una **blacklist**: rimuove i
+  segmenti che il parser riconosce (APP1-APP15 e COM nei JPEG; `eXIf`, `tEXt`,
+  `iTXt`, `zTXt`, `tIME`, `iCCP`, `caBX` nei PNG; `EXIF`, `XMP `, `ICCP`, `C2PA`
+  nei WebP) e copia il resto invariato, compreso ciò che non conosce — segmenti
+  esotici, thumbnail dentro l'EXIF, byte accodati dopo la fine dei dati immagine.
+  In cambio la qualità dell'immagine resta intatta. Il default resta la ricodifica.
+- **Voci conservate su richiesta**: se l'utente deseleziona una voce, quel dato
+  resta nel file per sua scelta esplicita. Sono conservabili solo campi EXIF di
+  base riscritti da noMeta (GPS, fotocamera, data, software, autore, copyright):
+  ICC e C2PA non sono conservabili proprio per non reimmettere byte opachi.
 - **`script-src 'unsafe-inline'` per gli stili**: gli stili inline restano ammessi
   (`style-src 'unsafe-inline'`). È un rischio molto inferiore rispetto agli script;
   i valori di stile non derivano da input utente.

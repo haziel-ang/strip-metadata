@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.13.0 — 2026-08-17
+
+- Rimozione selettiva: ogni voce conservabile ha una casella nella modale di
+  analisi, spuntata per default. Deselezionandola il dato resta nel file pulito.
+  Il pulsante diretto «Pulisci i metadati» continua a rimuovere tutto.
+- Voci conservabili: posizione GPS, fotocamera, data e ora, software, autore e
+  copyright. ICC e C2PA restano sempre rimossi — un ICC reinserito falserebbe i
+  colori dopo la ricodifica e un manifest C2PA sarebbe comunque invalido.
+- Analisi estesa ai tag EXIF `Artist` (0x013B) e `Copyright` (0x8298), che prima
+  non venivano letti né mostrati.
+- Nuovo scrittore EXIF in `src/metadata/exif.ts`, coperto da test di round-trip
+  contro il lettore gemello: GPS nei quattro emisferi, troncamento delle stringhe,
+  ordinamento delle entry per tag, offset pari, nessun denominatore nullo.
+  Gemello vanilla in `app.js`, come già per `ai.ts`.
+- Due motori di pulizia selezionabili: ricodifica su canvas (default, whitelist —
+  esce solo ciò che noMeta riscrive) e taglio senza ricodifica (blacklist —
+  qualità intatta, ma sopravvive ciò che il parser non riconosce). Il motore
+  senza ricodifica non è disponibile per HEIC, che va convertito.
+- L'orientamento EXIF viene riportato dal motore senza ricodifica, così
+  l'immagine non risulta ruotata dopo la pulizia; con la ricodifica non viene
+  mai riscritto, perché la rotazione è già nei pixel.
+- Corretto: il chunk `ICCP` inserito dall'encoder del browser sopravviveva alla
+  pulizia dei WebP. Ora i contenitori PNG e WebP vengono sempre ricostruiti dopo
+  la codifica, come già avveniva per i marker APP dei JPEG.
+- Il caricamento multiplo (batch) resta invariato: rimuove tutto.
+
 ## v1.12.1 — 2026-07-17
 
 - Corretto il rilevamento dell'origine AI nelle scansioni consecutive: ogni

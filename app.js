@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.12.1
+ * @version 1.13.0
  * @year    2026
  * @author  profxeni
  *
@@ -25,9 +25,9 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.12.1";
+  const APP_VERSION="1.13.0";
   // Il popup pubblico avanza solo quando viene pubblicato un changelog pubblico.
-  const PUBLIC_RELEASE_VERSION="1.12.0";
+  const PUBLIC_RELEASE_VERSION="1.13.0";
   const swAllowed = location.protocol === "https:" ||
     location.hostname === "localhost" || location.hostname === "127.0.0.1";
   if ("serviceWorker" in navigator && swAllowed) {
@@ -128,6 +128,17 @@
       "meta.datetime":"Data e ora","meta.software":"Software","meta.gps":"Posizione GPS",
       "meta.others":"Altri metadati incorporati","meta.text":"Testo incorporato","meta.lastmod":"Ultima modifica",
       "meta.c2pa":"Content Credentials (C2PA)",
+      "meta.artist":"Autore / nominativo","meta.copyright":"Copyright",
+      "meta.alwaysRemoved":"sempre rimosso","meta.keptPill":"mantenuto",
+      "keep.remove":"Rimuovi","keep.keep":"Mantieni",
+      "keep.summary":"Rimuovo {removed} voci, ne mantengo {kept}.",
+      "keep.summaryAll":"Rimuovo tutte le {n} voci selezionabili.",
+      "engine.title":"Come creare il file pulito",
+      "engine.reencode":"Ricodifica l'immagine (consigliato)",
+      "engine.reencodeNote":"Esce solo ciò che noMeta riscrive: nulla di sconosciuto sopravvive. Il JPEG viene ricompresso.",
+      "engine.lossless":"Non ricodificare",
+      "engine.losslessNote":"Qualità identica all'originale, ma sopravvive ciò che noMeta non riconosce.",
+      "modal.cleanSubKept":"Ho rimosso i dati nascosti, tranne quelli che hai scelto di mantenere.",
       "val.gpsWhere":"dove è stata scattata","val.embeddedTimestamp":"timestamp incorporato","val.blocks":"blocco/i",
       "val.c2pa":"manifest di provenienza incorporato (spesso AI)",
       "extra.icc":"profilo colore","extra.iptc":"IPTC/Photoshop","extra.xmp":"XMP","extra.comment":"commenti",
@@ -192,16 +203,15 @@
       "info.heic":"*I file HEIC vengono convertiti in JPG durante la pulizia.",
       "info.synthTitle":"Perché non rileva SynthID?",
       "info.synthText":"L'analisi legge le informazioni scritte nel file, non i pixel. Per questo non può vedere watermark invisibili come <b>SynthID</b>. E se i metadati sono già stati rimossi, non può stabilire se l'immagine è nata con l'AI. Il risultato è un indizio, non una prova.",
-      "release.title":"Novità della versione 1.12",
-      "release.sub":"Un aggiornamento piccolo da vedere, grande da usare.",
-      "release.beta":"Versione beta",
-      "release.lead":"noMeta ora può restare sul tuo dispositivo, pronta quando ti serve.",
-      "release.installTitle":"Installala come un'app",
-      "release.installText":"Aggiungila alla schermata Home dello smartphone o al desktop. Si apre senza la cornice del browser.",
-      "release.offlineTitle":"Usala anche senza rete",
-      "release.offlineText":"Dopo la prima apertura, puoi pulire le immagini anche in modalità aereo.",
-      "release.iconTitle":"Trovala al primo sguardo",
-      "release.iconText":"La nuova icona compare nella scheda del browser e tra le app installate.",
+      "release.title":"Novità della versione 1.13",
+      "release.sub":"Ora decidi tu cosa sparisce e cosa resta.",
+      "release.lead":"Prima era tutto o niente. Adesso puoi tenere quello che ti serve.",
+      "release.pickTitle":"Scegli cosa tenere",
+      "release.pickText":"In «Analizza immagine» ogni voce ha una casella, già spuntata. Togli la spunta a quelle che vuoi conservare: la posizione di uno scatto, il tuo nome come autore.",
+      "release.defaultTitle":"Se non tocchi nulla, non cambia nulla",
+      "release.defaultText":"Il pulsante «Pulisci i metadati» rimuove tutto come ha sempre fatto.",
+      "release.qualityTitle":"Puoi anche non ricomprimere",
+      "release.qualityText":"Una seconda modalità lascia i pixel intatti: qualità identica all'originale. In cambio è meno radicale, e te lo diciamo prima di usarla.",
       "release.done":"Ho capito"
     },
     en:{
@@ -248,6 +258,17 @@
       "meta.datetime":"Date & time","meta.software":"Software","meta.gps":"GPS location",
       "meta.others":"Other embedded metadata","meta.text":"Embedded text","meta.lastmod":"Last modified",
       "meta.c2pa":"Content Credentials (C2PA)",
+      "meta.artist":"Author / name","meta.copyright":"Copyright",
+      "meta.alwaysRemoved":"always removed","meta.keptPill":"kept",
+      "keep.remove":"Remove","keep.keep":"Keep",
+      "keep.summary":"Removing {removed} items, keeping {kept}.",
+      "keep.summaryAll":"Removing all {n} selectable items.",
+      "engine.title":"How to build the clean file",
+      "engine.reencode":"Re-encode the image (recommended)",
+      "engine.reencodeNote":"Only what noMeta rewrites survives: nothing unknown gets through. JPEG is recompressed.",
+      "engine.lossless":"Do not re-encode",
+      "engine.losslessNote":"Quality identical to the original, but anything noMeta does not recognise survives.",
+      "modal.cleanSubKept":"Hidden data removed, except the items you chose to keep.",
       "val.gpsWhere":"where it was taken","val.embeddedTimestamp":"embedded timestamp","val.blocks":"block(s)",
       "val.c2pa":"embedded provenance manifest (often AI)",
       "extra.icc":"color profile","extra.iptc":"IPTC/Photoshop","extra.xmp":"XMP","extra.comment":"comments",
@@ -312,16 +333,15 @@
       "info.heic":"*HEIC files are converted to JPG during cleaning.",
       "info.synthTitle":"Why can't it detect SynthID?",
       "info.synthText":"The analysis reads information written into the file, not its pixels. That means it cannot see invisible watermarks such as <b>SynthID</b>. If the metadata has already been removed, it cannot tell whether the image was made with AI. The result is a clue, not proof.",
-      "release.title":"What's new in version 1.12",
-      "release.sub":"A small update you can see and a big one you can use.",
-      "release.beta":"Beta version",
-      "release.lead":"noMeta can now stay on your device, ready when you need it.",
-      "release.installTitle":"Install it like an app",
-      "release.installText":"Add it to your phone's Home Screen or your desktop. It opens without the browser frame.",
-      "release.offlineTitle":"Use it without a connection",
-      "release.offlineText":"After the first visit, you can clean images even in airplane mode.",
-      "release.iconTitle":"Find it at a glance",
-      "release.iconText":"The new icon appears in your browser tab and among your installed apps.",
+      "release.title":"What's new in version 1.13",
+      "release.sub":"Now you decide what goes and what stays.",
+      "release.lead":"It used to be all or nothing. Now you can keep what you need.",
+      "release.pickTitle":"Choose what to keep",
+      "release.pickText":"Under \"Analyze image\" every item has a checkbox, already ticked. Untick the ones you want to keep: where a photo was taken, your name as its author.",
+      "release.defaultTitle":"Touch nothing, nothing changes",
+      "release.defaultText":"The \"Clean metadata\" button still removes everything, exactly as before.",
+      "release.qualityTitle":"You can skip the recompression",
+      "release.qualityText":"A second mode leaves the pixels untouched: quality identical to the original. It is less thorough in exchange, and we say so before you use it.",
       "release.done":"Got it"
     }
   };
@@ -388,7 +408,7 @@
         modal=$("modal"), backdrop=$("backdrop"), mClose=$("mClose"),
         mImg=$("mImg"), mTitle=$("mTitle"), mSub=$("mSub"), mSizes=$("mSizes"),
         mAITitle=$("mAITitle"), mAIWrap=$("mAIWrap"),
-        mMetaTitle=$("mMetaTitle"), mMeta=$("mMeta"),
+        mMetaTitle=$("mMetaTitle"), mMeta=$("mMeta"), mKeep=$("mKeep"),
         mActions=$("mActions"), iosHint=$("iosHint"),
         langBtn=$("langBtn"), themeBtn=$("themeBtn"), statCleaned=$("statCleaned"),
         geoModal=$("geoModal"), geoBackdrop=$("geoBackdrop"), geoClose=$("geoClose"),
@@ -408,6 +428,9 @@
 
   let cleanedURL=null, cleanedFile=null, originalURL=null, currentFile=null,
       lastReport=null, lastSizes=null, lastAI=null, modalMode="clean", analysisGeneration=0;
+  // Selezione corrente: `keepSet` contiene gli id che l'utente ha DEselezionato,
+  // cioè quelli da conservare. Vuoto = comportamento storico, rimuovi tutto.
+  let keepSet=new Set(), cleanEngine="reencode", currentBuf=null, lastClean=null;
 
   function fmtBytes(b){
     if(b<1024) return b+" B";
@@ -469,6 +492,14 @@
       if(ifd0[0x0110]) out.model=readASCII(ifd0[0x0110].valOff, ifd0[0x0110].count);
       if(ifd0[0x0132]) out.datetime=readASCII(ifd0[0x0132].valOff, ifd0[0x0132].count);
       if(ifd0[0x0131]) out.software=readASCII(ifd0[0x0131].valOff, ifd0[0x0131].count);
+      if(ifd0[0x013B]) out.artist=readASCII(ifd0[0x013B].valOff, ifd0[0x013B].count);
+      if(ifd0[0x8298]) out.copyright=readASCII(ifd0[0x8298].valOff, ifd0[0x8298].count);
+      // Orientation non è un dato sensibile e non viene mostrato in UI: serve solo
+      // al motore senza ricodifica, che altrimenti lascerebbe l'immagine storta.
+      if(ifd0[0x0112] && ifd0[0x0112].type===3){
+        const o=u16(ifd0[0x0112].valOff);
+        if(o>=1 && o<=8) out.orientation=o;
+      }
       if(ifd0[0x8769]){
         const exif=readIFD(tiffStart+view.getUint32(ifd0[0x8769].valOff,little));
         if(exif[0x9003]) out.dateOriginal=readASCII(exif[0x9003].valOff, exif[0x9003].count);
@@ -486,6 +517,17 @@
       }
     }catch(e){}
     return out;
+  }
+
+  /* Righe di analisi comuni ai tre contenitori. `id` identifica la voce in modo
+     stabile: è la chiave usata dalle caselle di selezione e dallo scrittore EXIF.
+     `keepable:true` = la voce può essere conservata nel file pulito. */
+  function pushExifItems(res,exif,dateKey){
+    if(exif.make||exif.model) res.items.push({id:"camera",keepable:true,ico:"📷",kKey:"meta.camera",v:[exif.make,exif.model].filter(Boolean).join(" ")});
+    if(exif.dateOriginal||exif.datetime) res.items.push({id:"datetime",keepable:true,ico:"📅",kKey:dateKey,v:(exif.dateOriginal||exif.datetime)});
+    if(exif.software) res.items.push({id:"software",keepable:true,ico:"🛠",kKey:"meta.software",v:exif.software});
+    if(exif.artist) res.items.push({id:"artist",keepable:true,ico:"✍️",kKey:"meta.artist",v:exif.artist});
+    if(exif.copyright) res.items.push({id:"copyright",keepable:true,ico:"©️",kKey:"meta.copyright",v:exif.copyright});
   }
 
   function parseJPEG(buf){
@@ -513,9 +555,8 @@
         res.bytes+=len;
         if(hdr.startsWith("Exif")){
           const exif=parseTIFF(view, segStart+6);
-          if(exif.make||exif.model) res.items.push({ico:"📷",kKey:"meta.camera",v:[exif.make,exif.model].filter(Boolean).join(" ")});
-          if(exif.dateOriginal||exif.datetime) res.items.push({ico:"📅",kKey:"meta.datetimeShot",v:(exif.dateOriginal||exif.datetime)});
-          if(exif.software) res.items.push({ico:"🛠",kKey:"meta.software",v:exif.software});
+          res.exif=exif;
+          pushExifItems(res,exif,"meta.datetimeShot");
           if(exif.gps) res.gps=exif.gps;
         }else seen.xmp=true;
       }
@@ -532,12 +573,12 @@
       else if(marker===0xFFFE){res.bytes+=len;seen.comment=true;}
       off+=2+len;
     }
-    if(res.gps) res.items.unshift({warn:true,ico:"📍",kKey:"meta.gps",v:res.gps.lat.toFixed(5)+", "+res.gps.lon.toFixed(5),suffixKey:"val.gpsWhere"});
+    if(res.gps) res.items.unshift({id:"gps",keepable:true,warn:true,ico:"📍",kKey:"meta.gps",v:res.gps.lat.toFixed(5)+", "+res.gps.lon.toFixed(5),suffixKey:"val.gpsWhere"});
     const extras=[];
     if(seen.icc)extras.push("extra.icc"); if(seen.iptc)extras.push("extra.iptc");
     if(seen.xmp)extras.push("extra.xmp"); if(seen.comment)extras.push("extra.comment");
-    if(extras.length)res.items.push({ico:"🗂",kKey:"meta.others",parts:extras});
-    if(seen.c2pa) res.items.push({ico:"🔏",kKey:"meta.c2pa",vKey:"val.c2pa"});
+    if(extras.length)res.items.push({id:"others",ico:"🗂",kKey:"meta.others",parts:extras});
+    if(seen.c2pa) res.items.push({id:"c2pa",ico:"🔏",kKey:"meta.c2pa",vKey:"val.c2pa"});
     return res;
   }
 
@@ -552,18 +593,18 @@
       if(["tEXt","iTXt","zTXt"].includes(type)){res.bytes+=len;txt.push(type);}
       else if(type==="eXIf"){res.bytes+=len;
         const exif=parseTIFF(view, off+8);
-        if(exif.make||exif.model) res.items.push({ico:"📷",kKey:"meta.camera",v:[exif.make,exif.model].filter(Boolean).join(" ")});
-        if(exif.dateOriginal||exif.datetime) res.items.push({ico:"📅",kKey:"meta.datetime",v:(exif.dateOriginal||exif.datetime)});
+        res.exif=exif;
+        pushExifItems(res,exif,"meta.datetime");
         if(exif.gps) res.gps=exif.gps;
       }
-      else if(type==="tIME"){res.bytes+=len;res.items.push({ico:"📅",kKey:"meta.lastmod",vKey:"val.embeddedTimestamp"});}
+      else if(type==="tIME"){res.bytes+=len;res.items.push({id:"lastmod",ico:"📅",kKey:"meta.lastmod",vKey:"val.embeddedTimestamp"});}
       else if(type==="caBX"){res.bytes+=len;res.c2pa=true;}   // chunk privato C2PA
       if(type==="IEND")break;
       off+=12+len;
     }
-    if(res.gps) res.items.unshift({warn:true,ico:"📍",kKey:"meta.gps",v:res.gps.lat.toFixed(5)+", "+res.gps.lon.toFixed(5)});
-    if(txt.length)res.items.push({ico:"🗂",kKey:"meta.text",blocks:{n:txt.length,types:[...new Set(txt)].join(", ")}});
-    if(res.c2pa) res.items.push({ico:"🔏",kKey:"meta.c2pa",vKey:"val.c2pa"});
+    if(res.gps) res.items.unshift({id:"gps",keepable:true,warn:true,ico:"📍",kKey:"meta.gps",v:res.gps.lat.toFixed(5)+", "+res.gps.lon.toFixed(5)});
+    if(txt.length)res.items.push({id:"text",ico:"🗂",kKey:"meta.text",blocks:{n:txt.length,types:[...new Set(txt)].join(", ")}});
+    if(res.c2pa) res.items.push({id:"c2pa",ico:"🔏",kKey:"meta.c2pa",vKey:"val.c2pa"});
     return res;
   }
 
@@ -583,9 +624,8 @@
         let ts=ps;
         if(view.getUint8(ps)===0x45&&view.getUint8(ps+1)===0x78&&view.getUint8(ps+2)===0x69&&view.getUint8(ps+3)===0x66) ts=ps+6;
         const exif=parseTIFF(view, ts);
-        if(exif.make||exif.model) res.items.push({ico:"📷",kKey:"meta.camera",v:[exif.make,exif.model].filter(Boolean).join(" ")});
-        if(exif.dateOriginal||exif.datetime) res.items.push({ico:"📅",kKey:"meta.datetime",v:(exif.dateOriginal||exif.datetime)});
-        if(exif.software) res.items.push({ico:"🛠",kKey:"meta.software",v:exif.software});
+        res.exif=exif;
+        pushExifItems(res,exif,"meta.datetime");
         if(exif.gps) res.gps=exif.gps;
       }
       else if(id==="XMP ") seen.xmp=true;
@@ -593,11 +633,11 @@
       else if(id==="C2PA") seen.c2pa=true;
       off=ps+size+(size&1);   // padding a byte pari
     }
-    if(res.gps) res.items.unshift({warn:true,ico:"📍",kKey:"meta.gps",v:res.gps.lat.toFixed(5)+", "+res.gps.lon.toFixed(5)});
+    if(res.gps) res.items.unshift({id:"gps",keepable:true,warn:true,ico:"📍",kKey:"meta.gps",v:res.gps.lat.toFixed(5)+", "+res.gps.lon.toFixed(5)});
     const extras=[];
     if(seen.icc)extras.push("extra.icc"); if(seen.xmp)extras.push("extra.xmp");
-    if(extras.length)res.items.push({ico:"🗂",kKey:"meta.others",parts:extras});
-    if(seen.c2pa) res.items.push({ico:"🔏",kKey:"meta.c2pa",vKey:"val.c2pa"});
+    if(extras.length)res.items.push({id:"others",ico:"🗂",kKey:"meta.others",parts:extras});
+    if(seen.c2pa) res.items.push({id:"c2pa",ico:"🔏",kKey:"meta.c2pa",vKey:"val.c2pa"});
     return res;
   }
 
@@ -992,16 +1032,214 @@
     mAIWrap.appendChild(details);
   }
 
+  /* ====================== SCRITTURA EXIF ======================
+     Gemello vanilla di `src/metadata/exif.ts`, che è la versione coperta da test
+     (`npm test`). La duplicazione è voluta finché dura la migrazione React: la
+     versione stabile resta un singolo file senza moduli. Ogni modifica qui va
+     riportata là, e viceversa. */
+
+  const MAX_EXIF_BYTES=65527;          // tetto fisico di un APP1 JPEG, meno "Exif\0\0"
+  // Voci che l'utente può scegliere di conservare. Tutto il resto viene sempre
+  // rimosso: ICC falserebbe i colori dopo la ricodifica e C2PA risulterebbe
+  // comunque una firma non valida.
+  const KEEPABLE_IDS=["gps","camera","datetime","software","artist","copyright"];
+
+  // TIFF ammette solo ASCII a 7 bit: il resto viene scartato, non tradotto.
+  function sanitizeAscii(value){
+    if(value==null) return "";
+    const src=String(value); let out="";
+    for(let i=0;i<src.length && out.length<MAX_META_CHARS;i++){
+      const c=src.charCodeAt(i);
+      if(c>=0x20 && c<=0x7E) out+=src[i];
+    }
+    return out.trim();
+  }
+  function exifAsciiEntry(tag,value){
+    const clean=sanitizeAscii(value);
+    if(!clean) return null;
+    const data=new Uint8Array(clean.length+1);
+    for(let i=0;i<clean.length;i++) data[i]=clean.charCodeAt(i);
+    return {tag,type:2,count:data.length,data};
+  }
+  function exifShortEntry(tag,value){
+    const data=new Uint8Array(2);
+    new DataView(data.buffer).setUint16(0,value,true);
+    return {tag,type:3,count:1,data};
+  }
+  function exifRationalEntry(tag,parts){
+    const data=new Uint8Array(parts.length*8), dv=new DataView(data.buffer);
+    parts.forEach((p,i)=>{ dv.setUint32(i*8,p[0],true); dv.setUint32(i*8+4,p[1],true); });
+    return {tag,type:5,count:parts.length,data};
+  }
+
+  /* Gradi decimali → gradi/primi/secondi. I secondi sono in decimillesimi:
+     precisione ~3 µm e denominatore mai 0, che manderebbe in NaN il lettore. */
+  function degreesToDMS(value){
+    const abs=Math.abs(value);
+    let deg=Math.floor(abs);
+    let min=Math.floor((abs-deg)*60);
+    let sec=Math.round(((abs-deg)*60-min)*60*10000);
+    if(sec>=600000){ sec-=600000; min+=1; }   // riporti da arrotondamento
+    if(min>=60){ min-=60; deg+=1; }
+    return [[deg,1],[min,1],[sec,10000]];
+  }
+
+  /* Serializza il sottoinsieme conservabile in un TIFF little-endian valido.
+     Restituisce un array vuoto se non c'è nulla da scrivere. */
+  function buildExifTIFF(values){
+    const ifd0=[], exifIfd=[], gpsIfd=[];
+    const push=(list,e)=>{ if(e) list.push(e); };
+
+    push(ifd0,exifAsciiEntry(0x010F,values.make));
+    push(ifd0,exifAsciiEntry(0x0110,values.model));
+    // Orientation solo per il motore senza ricodifica: con la ricodifica canvas
+    // la rotazione è già nei pixel e riscriverla ruoterebbe una seconda volta.
+    if(Number.isInteger(values.orientation)&&values.orientation>=1&&values.orientation<=8)
+      ifd0.push(exifShortEntry(0x0112,values.orientation));
+    push(ifd0,exifAsciiEntry(0x0131,values.software));
+    push(ifd0,exifAsciiEntry(0x0132,values.datetime));
+    push(ifd0,exifAsciiEntry(0x013B,values.artist));
+    push(ifd0,exifAsciiEntry(0x8298,values.copyright));
+
+    const dateOriginal=exifAsciiEntry(0x9003,values.dateOriginal);
+    if(dateOriginal){ exifIfd.push(dateOriginal); ifd0.push({tag:0x8769,type:4,count:1,data:new Uint8Array(4),pointerTo:"exif"}); }
+
+    const g=values.gps;
+    const gpsOk = g && Number.isFinite(g.lat) && Number.isFinite(g.lon) &&
+                  g.lat>=-90 && g.lat<=90 && g.lon>=-180 && g.lon<=180;
+    if(gpsOk){
+      gpsIfd.push({tag:0x0000,type:1,count:4,data:Uint8Array.from([2,3,0,0])});
+      push(gpsIfd,exifAsciiEntry(0x0001,g.lat<0?"S":"N"));
+      gpsIfd.push(exifRationalEntry(0x0002,degreesToDMS(g.lat)));
+      push(gpsIfd,exifAsciiEntry(0x0003,g.lon<0?"W":"E"));
+      gpsIfd.push(exifRationalEntry(0x0004,degreesToDMS(g.lon)));
+      ifd0.push({tag:0x8825,type:4,count:1,data:new Uint8Array(4),pointerTo:"gps"});
+    }
+
+    if(!ifd0.length) return new Uint8Array(0);
+
+    const byTag=(a,b)=>a.tag-b.tag;             // lo standard richiede tag crescenti
+    ifd0.sort(byTag); exifIfd.sort(byTag); gpsIfd.sort(byTag);
+
+    const ifdSize=n=>2+n*12+4;
+    const ifd0Offset=8;
+    let cursor=ifd0Offset+ifdSize(ifd0.length);
+    const exifOffset=exifIfd.length?cursor:0;
+    if(exifIfd.length) cursor+=ifdSize(exifIfd.length);
+    const gpsOffset=gpsIfd.length?cursor:0;
+    if(gpsIfd.length) cursor+=ifdSize(gpsIfd.length);
+
+    // Valori oltre i 4 byte della entry: area dati, ad offset pari.
+    const dataOffsets=new Map();
+    const all=ifd0.concat(exifIfd,gpsIfd);
+    for(const e of all){
+      if(e.data.length<=4) continue;
+      if(cursor%2) cursor+=1;
+      dataOffsets.set(e,cursor);
+      cursor+=e.data.length;
+    }
+    if(cursor>MAX_EXIF_BYTES) throw new Error("EXIF ricostruito troppo grande");
+
+    const out=new Uint8Array(cursor), dv=new DataView(out.buffer);
+    out[0]=0x49; out[1]=0x49;                   // "II" — little-endian
+    dv.setUint16(2,0x002A,true);
+    dv.setUint32(4,ifd0Offset,true);
+
+    function writeIfd(entries,at){
+      dv.setUint16(at,entries.length,true);
+      entries.forEach((e,i)=>{
+        const off=at+2+i*12;
+        dv.setUint16(off,e.tag,true);
+        dv.setUint16(off+2,e.type,true);
+        dv.setUint32(off+4,e.count,true);
+        if(e.pointerTo){ dv.setUint32(off+8,e.pointerTo==="exif"?exifOffset:gpsOffset,true); return; }
+        if(e.data.length<=4){ out.set(e.data,off+8); return; }
+        const target=dataOffsets.get(e);
+        dv.setUint32(off+8,target,true);
+        out.set(e.data,target);
+      });
+      dv.setUint32(at+2+entries.length*12,0,true);
+    }
+    writeIfd(ifd0,ifd0Offset);
+    if(exifIfd.length) writeIfd(exifIfd,exifOffset);
+    if(gpsIfd.length) writeIfd(gpsIfd,gpsOffset);
+    return out;
+  }
+
+  /* Filtra i valori letti dal file tenendo solo gli id selezionati dall'utente.
+     `withOrientation` vale solo per il motore senza ricodifica. */
+  function keptExifValues(exif,keep,withOrientation){
+    if(!exif || !keep || !keep.size) return withOrientation && exif && exif.orientation ? {orientation:exif.orientation} : null;
+    const out={};
+    if(keep.has("camera")){ out.make=exif.make; out.model=exif.model; }
+    if(keep.has("datetime")){ out.datetime=exif.datetime; out.dateOriginal=exif.dateOriginal; }
+    if(keep.has("software")) out.software=exif.software;
+    if(keep.has("artist")) out.artist=exif.artist;
+    if(keep.has("copyright")) out.copyright=exif.copyright;
+    if(keep.has("gps")) out.gps=exif.gps;
+    if(withOrientation && exif.orientation) out.orientation=exif.orientation;
+    return out;
+  }
+
+  /* Costruisce il TIFF da reinserire, o null se non c'è nulla da conservare.
+     Un errore di serializzazione non deve mai impedire la pulizia: si perde la
+     conservazione, non la rimozione. */
+  function buildKeptExif(exif,keep,withOrientation){
+    try{
+      const values=keptExifValues(exif,keep,withOrientation);
+      if(!values) return null;
+      const tiff=buildExifTIFF(values);
+      return tiff.length?tiff:null;
+    }catch(e){ return null; }
+  }
+
+  // CRC32 tabellare: serve solo per *creare* il chunk PNG eXIf. Rimuovere un
+  // chunk non richiede alcun ricalcolo, perché ognuno porta già il proprio CRC.
+  let crcTable=null;
+  function crc32(bytes){
+    if(!crcTable){
+      crcTable=new Uint32Array(256);
+      for(let n=0;n<256;n++){
+        let c=n;
+        for(let k=0;k<8;k++) c = (c&1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1);
+        crcTable[n]=c>>>0;
+      }
+    }
+    let c=0xFFFFFFFF;
+    for(let i=0;i<bytes.length;i++) c = crcTable[(c ^ bytes[i]) & 0xFF] ^ (c>>>8);
+    return (c ^ 0xFFFFFFFF)>>>0;
+  }
+
+  function concatBytes(parts){
+    let total=0; parts.forEach(p=>total+=p.length);
+    const out=new Uint8Array(total); let at=0;
+    parts.forEach(p=>{ out.set(p,at); at+=p.length; });
+    return out;
+  }
+
   /* ====================== PULIZIA ====================== */
   /* Rende la pulizia "idempotente": dopo la ricodifica su canvas il browser
      reinserisce comunque dei segmenti nel JPEG (profilo colore ICC, marcatori
      Adobe/Photoshop). Qui li rimuoviamo, tenendo solo l'essenziale (APP0/JFIF +
      tabelle + dati immagine), così il file salvato è davvero senza metadati e
      reimportandolo non risulta più alcun "metadato incorporato". */
-  function stripJpegMarkers(buf){
+  /* Con `exifBytes` inserisce un APP1 "Exif\0\0" ricostruito subito dopo SOI (o
+     dopo APP0/JFIF, che è l'ordine convenzionale). Serve a entrambi i motori:
+     sul buffer del canvas per la ricodifica, sul file originale per il taglio
+     senza ricodifica. */
+  function stripJpegMarkers(buf,exifBytes){
     const v=new DataView(buf), src=new Uint8Array(buf);
     if(v.getUint16(0)!==0xFFD8) return buf;            // non è JPEG: lascia com'è
     const parts=[src.subarray(0,2)];                   // SOI
+    let app1=null;
+    if(exifBytes && exifBytes.length && exifBytes.length+8<=65535){
+      const seg=new Uint8Array(exifBytes.length+10);
+      seg[0]=0xFF; seg[1]=0xE1;
+      new DataView(seg.buffer).setUint16(2,exifBytes.length+8);  // len + "Exif\0\0"
+      seg.set([0x45,0x78,0x69,0x66,0x00,0x00],4);
+      seg.set(exifBytes,10);
+      app1=seg;
+    }
     let off=2;
     // SICUREZZA — Anti-DoS: tetto massimo sui segmenti percorsi.
     let segCount=0;
@@ -1020,13 +1258,149 @@
       if(!drop) parts.push(src.subarray(off,segEnd));
       off=segEnd;
     }
-    let total=0; parts.forEach(p=>total+=p.length);
-    const res=new Uint8Array(total); let p=0;
-    parts.forEach(seg=>{res.set(seg,p);p+=seg.length;});
-    return res.buffer;
+    if(app1){
+      // Ordine convenzionale: SOI, APP0/JFIF se presente, poi APP1/Exif.
+      const hasJfif = parts.length>1 && parts[1].length>1 && parts[1][0]===0xFF && parts[1][1]===0xE0;
+      parts.splice(hasJfif?2:1,0,app1);
+    }
+    return concatBytes(parts).buffer;
   }
 
-  async function cleanImage(file){
+  /* Ricostruisce un PNG saltando i chunk di metadati e, se richiesto, inserendo
+     un eXIf ricostruito prima di IEND. Vale per entrambi i motori: sull'output
+     del canvas e sul file originale. Ritorna null se il buffer non è un PNG.
+     Rimuovere un chunk non richiede di ricalcolare CRC: ognuno porta il proprio. */
+  const PNG_DROP_CHUNKS=["eXIf","tEXt","iTXt","zTXt","tIME","iCCP","caBX"];
+  function rebuildPng(buf,exifBytes){
+    const view=new DataView(buf), src=new Uint8Array(buf);
+    const sig=[137,80,78,71,13,10,26,10];
+    if(src.length<8) return null;
+    for(let i=0;i<8;i++) if(src[i]!==sig[i]) return null;
+    const parts=[src.subarray(0,8)];
+    let off=8, chunkCount=0, sawEnd=false;
+    while(off+12<=view.byteLength && chunkCount++<MAX_META_CHUNKS){
+      const len=view.getUint32(off);
+      // SICUREZZA — una lunghezza dichiarata oltre il buffer indica dati corrotti.
+      if(len>view.byteLength-off-12) break;
+      let type=""; for(let i=0;i<4;i++) type+=String.fromCharCode(view.getUint8(off+4+i));
+      const end=off+12+len;
+      if(type==="IEND"){
+        if(exifBytes && exifBytes.length) parts.push(pngChunk("eXIf",exifBytes));
+        parts.push(src.subarray(off,end));
+        sawEnd=true;
+        break;                                  // scarta eventuali byte dopo IEND
+      }
+      if(PNG_DROP_CHUNKS.indexOf(type)<0) parts.push(src.subarray(off,end));
+      off=end;
+    }
+    if(!sawEnd) return null;                    // PNG troncato: meglio non toccarlo
+    return concatBytes(parts).buffer;
+  }
+  function pngChunk(type,data){
+    const out=new Uint8Array(data.length+12), dv=new DataView(out.buffer);
+    dv.setUint32(0,data.length);
+    for(let i=0;i<4;i++) out[4+i]=type.charCodeAt(i);
+    out.set(data,8);
+    dv.setUint32(out.length-4,crc32(out.subarray(4,out.length-4)));
+    return out;
+  }
+
+  /* Ricostruisce un WebP saltando i chunk di metadati e, se richiesto, aggiungendo
+     un chunk EXIF. Il contenitore RIFF ammette EXIF solo con un header esteso
+     VP8X: l'output del canvas ne è privo, quindi va sintetizzato usando le
+     dimensioni note del canvas. Senza quelle dimensioni si rinuncia (null) invece
+     di produrre un file rotto. */
+  const WEBP_DROP_CHUNKS=["EXIF","XMP ","ICCP","C2PA"];
+  function rebuildWebp(buf,exifBytes,canvasW,canvasH){
+    const view=new DataView(buf), src=new Uint8Array(buf);
+    const cc=o=>{let s="";for(let i=0;i<4;i++)s+=String.fromCharCode(view.getUint8(o+i));return s;};
+    if(view.byteLength<12 || cc(0)!=="RIFF" || cc(8)!=="WEBP") return null;
+    const riffEnd=Math.min(view.byteLength,8+view.getUint32(4,true));
+    const kept=[];                              // {id, payload}
+    let off=12, chunkCount=0;
+    while(off+8<=riffEnd && chunkCount++<MAX_META_CHUNKS){
+      const id=cc(off), size=view.getUint32(off+4,true), ps=off+8;
+      if(size>riffEnd-ps) break;
+      if(WEBP_DROP_CHUNKS.indexOf(id)<0) kept.push({id,payload:src.subarray(ps,ps+size)});
+      off=ps+size+(size&1);                     // padding a byte pari
+    }
+    if(!kept.length) return null;
+
+    const wantExif = !!(exifBytes && exifBytes.length);
+    let vp8x=kept.find(c=>c.id==="VP8X");
+    if(wantExif && !vp8x){
+      if(!(canvasW>0 && canvasH>0 && canvasW<=1<<24 && canvasH<=1<<24)) return null;
+      const payload=new Uint8Array(10);
+      payload[4]=(canvasW-1)&0xFF; payload[5]=((canvasW-1)>>8)&0xFF; payload[6]=((canvasW-1)>>16)&0xFF;
+      payload[7]=(canvasH-1)&0xFF; payload[8]=((canvasH-1)>>8)&0xFF; payload[9]=((canvasH-1)>>16)&0xFF;
+      vp8x={id:"VP8X",payload};
+      kept.unshift(vp8x);                       // VP8X deve essere il primo chunk
+    }
+    if(wantExif) kept.push({id:"EXIF",payload:exifBytes});
+
+    // I flag VP8X devono descrivere esattamente i chunk rimasti.
+    if(vp8x && vp8x.payload.length>=1){
+      const has=id=>kept.some(c=>c.id===id);
+      let flags=0;
+      if(has("ANIM")) flags|=0x02;
+      if(has("XMP ")) flags|=0x04;
+      if(has("EXIF")) flags|=0x08;
+      if(has("ALPH")) flags|=0x10;
+      if(has("ICCP")) flags|=0x20;
+      const copy=new Uint8Array(vp8x.payload); copy[0]=flags; vp8x.payload=copy;
+      const at=kept.indexOf(vp8x); if(at>=0) kept[at]=vp8x;
+    }
+
+    const body=[];
+    for(const c of kept){
+      const head=new Uint8Array(8);
+      for(let i=0;i<4;i++) head[i]=c.id.charCodeAt(i);
+      new DataView(head.buffer).setUint32(4,c.payload.length,true);
+      body.push(head,c.payload);
+      if(c.payload.length&1) body.push(new Uint8Array(1));
+    }
+    let bodySize=0; body.forEach(p=>bodySize+=p.length);
+    const header=new Uint8Array(12), hv=new DataView(header.buffer);
+    header.set([0x52,0x49,0x46,0x46],0);        // "RIFF"
+    hv.setUint32(4,bodySize+4,true);            // size = "WEBP" + chunk
+    header.set([0x57,0x45,0x42,0x50],8);        // "WEBP"
+    return concatBytes([header].concat(body)).buffer;
+  }
+
+  /* Motore senza ricodifica: riscrive il contenitore del file originale saltando
+     i segmenti di metadati e copiando i dati immagine byte per byte. Qualità
+     intatta, ma è un approccio a blacklist — sopravvive ciò che non riconosciamo.
+     Ritorna null se il formato non è gestibile senza ricodifica. */
+  function cleanLossless(buf,type,exifBytes){
+    try{
+      if(type==="image/jpeg") return stripJpegMarkers(buf,exifBytes);
+      if(type==="image/png")  return rebuildPng(buf,exifBytes);
+      if(type==="image/webp") return rebuildWebp(buf,exifBytes);
+    }catch(e){}
+    return null;
+  }
+
+  /* `opts` = {keep:Set<id>, engine:"reencode"|"lossless", exif, buf}.
+     Senza `opts` (o con `keep` vuoto ed engine "reencode") il percorso è identico
+     a quello storico: ricodifica e basta. */
+  async function cleanImage(file,opts){
+    const keep=(opts&&opts.keep)||null;
+    const engine=(opts&&opts.engine)||"reencode";
+    const exif=(opts&&opts.exif)||null;
+
+    // Motore senza ricodifica: si lavora sui byte originali, i pixel non si toccano.
+    if(engine==="lossless" && opts && opts.buf){
+      const type=sniffImageType(opts.buf,file.type)||file.type;
+      const exifBytes=buildKeptExif(exif,keep,true);   // orientamento sempre riportato
+      const out=cleanLossless(opts.buf,type,exifBytes);
+      if(out){
+        const blob=new Blob([out],{type});
+        const dim=await imageSize(blob);
+        return {blob,type,w:dim.w,h:dim.h,engine:"lossless",keptExif:!!(keep&&keep.size&&exifBytes)};
+      }
+      // Formato non tagliabile a mano (es. HEIC): si ricade sulla ricodifica.
+    }
+
     // Disegna i soli pixel su <canvas> e li ricodifica: il file in uscita non
     // contiene metadati. NB: i watermark nei pixel (es. SynthID) restano.
     let bitmap;
@@ -1045,11 +1419,38 @@
     const outType=(file.type==="image/png"||file.type==="image/webp")?file.type:"image/jpeg";
     const quality=outType==="image/jpeg"?0.92:undefined;
     let blob=await new Promise(r=>canvas.toBlob(r,outType,quality));
-    // Per i JPEG, togli i segmenti APP/commenti reintrodotti dall'encoder del browser.
+    // L'orientamento è già cotto nei pixel da `imageOrientation:"from-image"`:
+    // riscrivere il tag farebbe ruotare l'immagine una seconda volta.
+    const exifBytes=buildKeptExif(exif,keep,false);
+    let keptExif=!!exifBytes;
+    // Per i JPEG, togli i segmenti APP/commenti reintrodotti dall'encoder del
+    // browser, e reinserisci l'EXIF ricostruito se l'utente ha scelto di tenerne.
     if(outType==="image/jpeg" && blob){
-      try{ blob=new Blob([stripJpegMarkers(await blob.arrayBuffer())],{type:"image/jpeg"}); }catch(e){}
+      try{ blob=new Blob([stripJpegMarkers(await blob.arrayBuffer(),exifBytes)],{type:"image/jpeg"}); }catch(e){ keptExif=false; }
+    }else if(blob && (outType==="image/png"||outType==="image/webp")){
+      // Sempre, anche senza nulla da conservare: l'encoder del browser aggiunge
+      // di suo dei chunk (Chromium mette un ICCP nel WebP) che vanno tolti,
+      // esattamente come si fa per i marker APP dei JPEG.
+      try{
+        const src=await blob.arrayBuffer();
+        const out = outType==="image/png"
+          ? rebuildPng(src,exifBytes)
+          : rebuildWebp(src,exifBytes,canvas.width,canvas.height);
+        if(out) blob=new Blob([out],{type:outType});
+        else keptExif=false;      // contenitore non riconosciuto: meglio pulito che rotto
+      }catch(e){ keptExif=false; }
     }
-    return {blob,type:outType,w:canvas.width,h:canvas.height};
+    return {blob,type:outType,w:canvas.width,h:canvas.height,engine:"reencode",keptExif};
+  }
+
+  // Dimensioni di un blob già codificato, senza passare dal canvas.
+  async function imageSize(blob){
+    try{
+      const bmp=await createImageBitmap(blob);
+      const dim={w:bmp.width,h:bmp.height};
+      bmp.close&&bmp.close();
+      return dim;
+    }catch(e){ return {w:0,h:0}; }
   }
   function renameClean(name,type){
     // SICUREZZA — Previene path traversal: prende solo l'ultimo componente del nome
@@ -1078,6 +1479,7 @@
     batch.classList.remove("show"); batchURLs.forEach(u=>URL.revokeObjectURL(u));
     batchURLs=[]; batchItems=[]; batchList.innerHTML="";
     lastReport=null; lastAI=null; lastSizes=null; cleanedFile=null;
+    keepSet=new Set(); cleanEngine="reencode"; currentBuf=null; lastClean=null;
     choiceHint.textContent="";
     if(cleanedURL){URL.revokeObjectURL(cleanedURL);cleanedURL=null;}
     if(file.size>MAX_FILE_BYTES){
@@ -1110,6 +1512,8 @@
       // sovrascritti dal completamento tardivo di questa analisi.
       if(generation!==analysisGeneration || currentFile!==file) return;
       lastReport=report; lastAI=ai;
+      // Serve al motore senza ricodifica, che lavora sui byte originali.
+      currentBuf=buf;
     }catch(e){
       if(generation!==analysisGeneration || currentFile!==file) return;
       frame.classList.remove("scanning"); chip.classList.remove("show");
@@ -1139,6 +1543,7 @@
     const generation=++batchGeneration;
     ++analysisGeneration; // il batch invalida una scansione singola pendente
     currentFile=null; lastReport=null; lastAI=null; lastSizes=null; cleanedFile=null;
+    currentBuf=null; keepSet=new Set(); cleanEngine="reencode"; lastClean=null;
     if(originalURL){URL.revokeObjectURL(originalURL);originalURL=null;}
     if(cleanedURL){URL.revokeObjectURL(cleanedURL);cleanedURL=null;}
     drop.classList.add("hidden"); stage.classList.remove("show"); batch.classList.add("show");
@@ -1200,6 +1605,7 @@
     ++batchGeneration;
     batch.classList.remove("show"); drop.classList.remove("hidden");
     fileInput.value="";
+    currentBuf=null; keepSet=new Set(); cleanEngine="reencode"; lastClean=null;
     batchURLs.forEach(u=>URL.revokeObjectURL(u)); batchURLs=[]; batchItems=[];
     batchList.innerHTML="";
   }
@@ -1210,7 +1616,14 @@
     choice.style.visibility="hidden";
     chip.classList.add("show"); chiptx.textContent=t("chip.cleaning"); frame.classList.add("scanning");
     let cleaned;
-    try{ cleaned=await cleanImage(file); }
+    try{
+      cleaned=await cleanImage(file,{
+        keep:keepSet,
+        engine:losslessAvailable()?cleanEngine:"reencode",
+        exif:lastReport&&lastReport.exif,
+        buf:currentBuf
+      });
+    }
     catch(e){
       if(generation!==analysisGeneration || currentFile!==file) return;
       frame.classList.remove("scanning"); chip.classList.remove("show");
@@ -1226,6 +1639,7 @@
     cleanedURL=URL.createObjectURL(cleaned.blob);
     preview.src=cleanedURL;
     lastSizes={orig:file.size, clean:cleaned.blob.size, w:cleaned.w, h:cleaned.h};
+    lastClean={engine:cleaned.engine, keptExif:cleaned.keptExif, keep:new Set(keepSet)};
     choice.style.visibility="visible";
     incCount();   // +1 immagine ripulita su questo dispositivo (solo locale)
 
@@ -1252,7 +1666,9 @@
       mMetaTitle.textContent=t("meta.presentTitle");
     }else{
       mTitle.textContent=t("modal.cleanTitle");
-      if(lastReport && lastReport.gps) mSub.textContent=t("modal.cleanSubGps");
+      // Se qualcosa è stato conservato non si può dire che "non c'è più".
+      if(lastClean && lastClean.keptExif) mSub.textContent=t("modal.cleanSubKept");
+      else if(lastReport && lastReport.gps) mSub.textContent=t("modal.cleanSubGps");
       else if(lastReport && lastReport.items.length) mSub.textContent=t("modal.cleanSubItems");
       else mSub.textContent=t("modal.cleanSubNone");
       mSizes.style.display="";
@@ -1270,19 +1686,37 @@
       lastReport.items.forEach(it=>{
         const el=document.createElement("div");
         el.className="m-row"+(it.warn?" warn":"");
-        const pill = analyzeOnly ? "" : '<span class="pill">'+esc(t("meta.removedPill"))+'</span>';
         // esc(): il valore può contenere stringhe arbitrarie lette dall'EXIF → XSS.
         el.innerHTML='<div class="ic">'+esc(it.ico)+'</div><div class="tx">'+
-          '<div class="k">'+esc(t(it.kKey))+pill+'</div>'+
+          '<div class="k">'+esc(t(it.kKey))+'</div>'+
           '<div class="v"'+(analyzeOnly?' style="text-decoration:none"':'')+'>'+esc(itemValue(it))+'</div></div>';
-        // La riga GPS è cliccabile e apre il popup mappa.
-        if(it.kKey==="meta.gps" && lastReport.gps){
-          el.classList.add("geo-row"); el.setAttribute("role","button"); el.tabIndex=0;
-          const k=el.querySelector(".k");
-          if(k){ const m=document.createElement("span"); m.className="maplink"; m.textContent="🗺 "+t("geo.viewMap"); k.appendChild(m); }
-          const go=()=>openGeo(lastReport.gps.lat, lastReport.gps.lon);
-          el.addEventListener("click",go);
-          el.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
+        const kEl=el.querySelector(".k");
+
+        if(analyzeOnly){
+          if(it.keepable) el.appendChild(buildKeepToggle(it));
+          else if(kEl){
+            const s=document.createElement("span");
+            s.className="pill"; s.textContent=t("meta.alwaysRemoved");
+            kEl.appendChild(s);
+          }
+        }else if(kEl){
+          // Dopo la pulizia ogni riga dichiara la propria sorte.
+          const kept = lastClean && lastClean.keptExif && lastClean.keep.has(it.id);
+          const s=document.createElement("span");
+          s.className="pill"+(kept?" kept":"");
+          s.textContent=t(kept?"meta.keptPill":"meta.removedPill");
+          kEl.appendChild(s);
+          if(kept) el.classList.add("kept");   // toglie la barratura sul valore
+        }
+
+        // Il link mappa è cliccabile da solo: la riga intera non lo è più, o il
+        // clic si sovrapporrebbe alla casella di selezione.
+        if(it.id==="gps" && lastReport.gps && kEl){
+          el.classList.add("geo-row");
+          const m=document.createElement("button");
+          m.type="button"; m.className="maplink"; m.textContent="🗺 "+t("geo.viewMap");
+          m.addEventListener("click",e=>{ e.stopPropagation(); openGeo(lastReport.gps.lat, lastReport.gps.lon); });
+          kEl.appendChild(m);
         }
         mMeta.appendChild(el);
       });
@@ -1293,7 +1727,74 @@
       mMeta.appendChild(e);
     }
 
+    renderKeepControls(analyzeOnly);
     buildActions(analyzeOnly);
+  }
+
+  /* Casella per una voce conservabile. Spuntata = verrà rimossa: il default è
+     "rimuovi tutto", esattamente come prima di questa funzione. */
+  function buildKeepToggle(it){
+    const wrap=document.createElement("label");
+    wrap.className="m-keep-toggle";
+    const box=document.createElement("input");
+    box.type="checkbox";
+    box.checked=!keepSet.has(it.id);
+    box.setAttribute("aria-label",t("keep.remove")+" — "+t(it.kKey));
+    const txt=document.createElement("span");
+    const sync=()=>{ txt.textContent=t(box.checked?"keep.remove":"keep.keep"); };
+    sync();
+    box.addEventListener("change",()=>{
+      if(box.checked) keepSet.delete(it.id); else keepSet.add(it.id);
+      sync();
+      renderKeepControls(true);
+    });
+    wrap.appendChild(box); wrap.appendChild(txt);
+    return wrap;
+  }
+
+  // Il taglio senza ricodifica esiste solo per i contenitori che sappiamo
+  // riscrivere: HEIC va per forza convertito, quindi ricodificato.
+  function losslessAvailable(){
+    if(!currentBuf) return false;
+    const type=sniffImageType(currentBuf, currentFile&&currentFile.type);
+    return type==="image/jpeg" || type==="image/png" || type==="image/webp";
+  }
+
+  /* Riepilogo della selezione e scelta del motore. Vengono mostrati solo in
+     analisi e solo se c'è davvero qualcosa da scegliere. */
+  function renderKeepControls(analyzeOnly){
+    const keepable=(lastReport&&lastReport.items||[]).filter(x=>x.keepable);
+    if(!analyzeOnly || !keepable.length){ mKeep.hidden=true; mKeep.innerHTML=""; return; }
+    mKeep.hidden=false;
+    mKeep.innerHTML="";
+
+    const kept=keepable.filter(x=>keepSet.has(x.id)).length;
+    const summary=document.createElement("p");
+    summary.className="m-keep-sum";
+    summary.textContent=kept
+      ? t("keep.summary",{removed:keepable.length-kept, kept})
+      : t("keep.summaryAll",{n:keepable.length});
+    mKeep.appendChild(summary);
+
+    if(!losslessAvailable()) return;
+    const box=document.createElement("div");
+    box.className="m-engine";
+    const title=document.createElement("p");
+    title.className="m-engine-t"; title.textContent=t("engine.title");
+    box.appendChild(title);
+    [["reencode","engine.reencode","engine.reencodeNote"],
+     ["lossless","engine.lossless","engine.losslessNote"]].forEach(([id,labelKey,noteKey])=>{
+      const label=document.createElement("label");
+      label.className="m-engine-opt"+(cleanEngine===id?" on":"");
+      const radio=document.createElement("input");
+      radio.type="radio"; radio.name="nometa-engine"; radio.checked=cleanEngine===id;
+      radio.addEventListener("change",()=>{ cleanEngine=id; renderKeepControls(true); });
+      const tx=document.createElement("span");
+      tx.innerHTML='<b>'+esc(t(labelKey))+'</b><em>'+esc(t(noteKey))+'</em>';
+      label.appendChild(radio); label.appendChild(tx);
+      box.appendChild(label);
+    });
+    mKeep.appendChild(box);
   }
 
   function buildActions(analyzeOnly){
@@ -1422,6 +1923,8 @@
     if(originalURL){URL.revokeObjectURL(originalURL);originalURL=null;}
     preview.removeAttribute("src");
     cleanedFile=null; currentFile=null; lastReport=null; lastSizes=null; lastAI=null;
+    // currentBuf può pesare fino a MAX_FILE_BYTES: va rilasciato subito.
+    keepSet=new Set(); cleanEngine="reencode"; currentBuf=null; lastClean=null;
   }
 
   /* ====================== EVENTI ====================== */
@@ -1444,7 +1947,9 @@
       }
     }
   });
-  actClean.addEventListener("click",doClean);
+  // Il pulsante diretto resta il "rimuovi tutto": ignora ed azzera ogni scelta
+  // fatta nella modale, così il comportamento predefinito non cambia mai.
+  actClean.addEventListener("click",()=>{ keepSet=new Set(); cleanEngine="reencode"; doClean(); });
   actAnalyze.addEventListener("click",showAnalysis);
   headerInfoBtn.addEventListener("click",openInfo);
   aiInfoBtn.addEventListener("click",openInfo);
