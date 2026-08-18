@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_EXIF_BYTES, buildExifTIFF, degreesToDMS, readExifTIFF } from "./exif";
+import { MAX_EXIF_BYTES, buildExifTIFF, composeCopyright, degreesToDMS, readExifTIFF } from "./exif";
 
 /** Precisione attesa dal round-trip: i secondi sono scritti in decimillesimi. */
 const GPS_TOLERANCE = 1e-6;
@@ -103,10 +103,22 @@ describe("buildExifTIFF", () => {
       .some((entry) => entry.tag === 0x8769)).toBe(true);
   });
 
-  it("strips non-ASCII characters instead of mangling them", () => {
-    const parsed = readExifTIFF(buildExifTIFF({ artist: "Renée Müller 日本" }));
+  it("keeps Latin-1 letters so typed names survive intact", () => {
+    const parsed = readExifTIFF(buildExifTIFF({ artist: "Renée Müller" }));
 
-    expect(parsed.artist).toBe("Rene Mller");
+    expect(parsed.artist).toBe("Renée Müller");
+  });
+
+  it("keeps the copyright sign, which is Latin-1 and not ASCII", () => {
+    const parsed = readExifTIFF(buildExifTIFF({ copyright: "© 2026 Mario Rossi" }));
+
+    expect(parsed.copyright).toBe("© 2026 Mario Rossi");
+  });
+
+  it("drops characters that have no single-byte Latin-1 form", () => {
+    const parsed = readExifTIFF(buildExifTIFF({ artist: "日本 Mario" }));
+
+    expect(parsed.artist).toBe("Mario");
   });
 
   it("truncates oversized strings to the shared metadata cap", () => {
@@ -260,5 +272,36 @@ describe("degreesToDMS", () => {
 
   it("ignores the sign, which travels in the N/S and E/W reference tags", () => {
     expect(degreesToDMS(-41.9028)).toEqual(degreesToDMS(41.9028));
+  });
+});
+
+describe("composeCopyright", () => {
+  it("uses the year the photo was taken, not the year it is cleaned", () => {
+    expect(composeCopyright("Mario Rossi", "2019:07:04 10:00:00", new Date("2026-08-18")))
+      .toBe("© 2019 Mario Rossi");
+  });
+
+  it("falls back to the current year when the file has no capture date", () => {
+    expect(composeCopyright("Mario Rossi", undefined, new Date("2026-08-18")))
+      .toBe("© 2026 Mario Rossi");
+  });
+
+  it("returns nothing without a name, so no empty copyright is written", () => {
+    expect(composeCopyright("")).toBe("");
+    expect(composeCopyright("   ")).toBe("");
+    expect(composeCopyright(undefined)).toBe("");
+  });
+
+  it("survives a write/read round-trip together with an accented name", () => {
+    const value = composeCopyright("Renée Müller", "2019:07:04 10:00:00");
+    const parsed = readExifTIFF(buildExifTIFF({ copyright: value, artist: "Renée Müller" }));
+
+    expect(parsed.copyright).toBe("© 2019 Renée Müller");
+    expect(parsed.artist).toBe("Renée Müller");
+  });
+
+  it("ignores a malformed capture date rather than emitting a broken year", () => {
+    expect(composeCopyright("Mario", "non una data", new Date("2026-08-18")))
+      .toBe("© 2026 Mario");
   });
 });

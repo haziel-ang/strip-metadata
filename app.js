@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.13.4
+ * @version 1.14.0
  * @year    2026
  * @author  profxeni
  *
@@ -25,9 +25,9 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.13.4";
+  const APP_VERSION="1.14.0";
   // Il popup pubblico avanza solo quando viene pubblicato un changelog pubblico.
-  const PUBLIC_RELEASE_VERSION="1.13.0";
+  const PUBLIC_RELEASE_VERSION="1.14.0";
   const swAllowed = location.protocol === "https:" ||
     location.hostname === "localhost" || location.hostname === "127.0.0.1";
   if ("serviceWorker" in navigator && swAllowed) {
@@ -114,6 +114,16 @@
       "err.format":"Questo formato non è elaborabile in questo browser — prova con un JPG o PNG.",
       "modal.cleanTitle":"Immagine ripulita","modal.analyzeTitle":"Analisi origine AI",
       "modal.chooseTitle":"Scegli cosa conservare",
+      "add.title":"Scrivi i tuoi dati","add.sub":"Facoltativo. Vengono scritti nel file pulito al posto di quelli rimossi.",
+      "add.name":"Nome dell'autore","add.namePh":"Mario Rossi",
+      "add.lat":"Latitudine","add.lon":"Longitudine",
+      "add.preview":"Verrà scritto:",
+      "add.useMyPos":"Usa la mia posizione",
+      "add.geoNote":"Su telefono la posizione arriva dal GPS. Su computer il browser può ricavarla contattando un servizio di rete: non lo fa noMeta, ma succede sul tuo dispositivo.",
+      "add.geoWait":"Rilevamento in corso…","add.geoDenied":"Permesso negato. Puoi scrivere le coordinate a mano.",
+      "add.geoFailed":"Posizione non disponibile. Puoi scrivere le coordinate a mano.",
+      "add.coordsInvalid":"Servono entrambe le coordinate: latitudine da -90 a 90, longitudine da -180 a 180.",
+      "meta.addedPill":"aggiunto","meta.addedTitle":"Metadati scritti",
       "modal.chooseSub":"Togli la spunta alle voci che vuoi lasciare nel file.",
       "modal.analyzeSub":"Ecco cosa raccontano le informazioni nascoste nel file.",
       "modal.cleanSubGps":"La posizione e gli altri dati nascosti non ci sono più.",
@@ -206,15 +216,15 @@
       "info.heic":"*I file HEIC vengono convertiti in JPG durante la pulizia.",
       "info.synthTitle":"Perché non rileva SynthID?",
       "info.synthText":"L'analisi legge le informazioni scritte nel file, non i pixel. Per questo non può vedere watermark invisibili come <b>SynthID</b>. E se i metadati sono già stati rimossi, non può stabilire se l'immagine è nata con l'AI. Il risultato è un indizio, non una prova.",
-      "release.title":"Novità della versione 1.13",
-      "release.sub":"Ora decidi tu cosa sparisce e cosa resta.",
-      "release.lead":"Prima era tutto o niente. Adesso puoi tenere quello che ti serve.",
-      "release.pickTitle":"Scegli cosa tenere",
-      "release.pickText":"In «Analizza immagine» ogni voce ha una casella, già spuntata. Togli la spunta a quelle che vuoi conservare: la posizione di uno scatto, il tuo nome come autore.",
-      "release.defaultTitle":"Se non tocchi nulla, non cambia nulla",
-      "release.defaultText":"Il pulsante «Pulisci i metadati» rimuove tutto come ha sempre fatto.",
-      "release.qualityTitle":"Puoi anche non ricomprimere",
-      "release.qualityText":"Una seconda modalità lascia i pixel intatti: qualità identica all'originale. In cambio è meno radicale, e te lo diciamo prima di usarla.",
+      "release.title":"Novità della versione 1.14",
+      "release.sub":"Adesso puoi anche firmare i tuoi scatti.",
+      "release.lead":"Non solo togliere: da oggi puoi scrivere i tuoi dati nella foto.",
+      "release.pickTitle":"Il tuo nome, il tuo copyright",
+      "release.pickText":"Scrivi come ti chiami e noMeta compone il copyright con l'anno dello scatto: «© 2019 Mario Rossi». Il nome se lo ricorda per la volta dopo.",
+      "release.defaultTitle":"La posizione che vuoi tu",
+      "release.defaultText":"Incolla le coordinate o usa la tua posizione attuale. Utile per rimettere un luogo che un social ha cancellato.",
+      "release.qualityTitle":"Scegliere resta come prima",
+      "release.qualityText":"«Rimuovi tutti i metadati» continua a togliere tutto senza chiedere. Il resto lo trovi in «Scegli cosa conservare».",
       "release.done":"Ho capito"
     },
     en:{
@@ -247,6 +257,16 @@
       "err.format":"This format can't be processed in this browser — try a JPG or PNG.",
       "modal.cleanTitle":"Image cleaned","modal.analyzeTitle":"AI origin analysis",
       "modal.chooseTitle":"Choose what to keep",
+      "add.title":"Write your own details","add.sub":"Optional. These are written into the clean file, in place of what was removed.",
+      "add.name":"Author name","add.namePh":"Mario Rossi",
+      "add.lat":"Latitude","add.lon":"Longitude",
+      "add.preview":"Will be written:",
+      "add.useMyPos":"Use my location",
+      "add.geoNote":"On a phone the location comes from GPS. On a computer the browser may work it out by contacting a network service: noMeta does not, but it happens on your device.",
+      "add.geoWait":"Locating…","add.geoDenied":"Permission denied. You can type the coordinates instead.",
+      "add.geoFailed":"Location unavailable. You can type the coordinates instead.",
+      "add.coordsInvalid":"Both coordinates are needed: latitude -90 to 90, longitude -180 to 180.",
+      "meta.addedPill":"added","meta.addedTitle":"Metadata written",
       "modal.chooseSub":"Untick the items you want left in the file.",
       "modal.analyzeSub":"Here is what the information hidden in the file says.",
       "modal.cleanSubGps":"The location and other hidden data are gone.",
@@ -339,15 +359,15 @@
       "info.heic":"*HEIC files are converted to JPG during cleaning.",
       "info.synthTitle":"Why can't it detect SynthID?",
       "info.synthText":"The analysis reads information written into the file, not its pixels. That means it cannot see invisible watermarks such as <b>SynthID</b>. If the metadata has already been removed, it cannot tell whether the image was made with AI. The result is a clue, not proof.",
-      "release.title":"What's new in version 1.13",
-      "release.sub":"Now you decide what goes and what stays.",
-      "release.lead":"It used to be all or nothing. Now you can keep what you need.",
-      "release.pickTitle":"Choose what to keep",
-      "release.pickText":"Under \"Analyze image\" every item has a checkbox, already ticked. Untick the ones you want to keep: where a photo was taken, your name as its author.",
-      "release.defaultTitle":"Touch nothing, nothing changes",
-      "release.defaultText":"The \"Clean metadata\" button still removes everything, exactly as before.",
-      "release.qualityTitle":"You can skip the recompression",
-      "release.qualityText":"A second mode leaves the pixels untouched: quality identical to the original. It is less thorough in exchange, and we say so before you use it.",
+      "release.title":"What's new in version 1.14",
+      "release.sub":"Now you can sign your own shots too.",
+      "release.lead":"Not only removing: from today you can write your own details into a photo.",
+      "release.pickTitle":"Your name, your copyright",
+      "release.pickText":"Type your name and noMeta builds the copyright with the year the photo was taken: \"© 2019 Mario Rossi\". It remembers the name for next time.",
+      "release.defaultTitle":"The location you want",
+      "release.defaultText":"Paste coordinates or use your current position. Handy for putting back a place a social network stripped out.",
+      "release.qualityTitle":"Choosing works as before",
+      "release.qualityText":"\"Remove all metadata\" still removes everything without asking. The rest lives under \"Choose what to keep\".",
       "release.done":"Got it"
     }
   };
@@ -415,7 +435,7 @@
         modal=$("modal"), backdrop=$("backdrop"), mClose=$("mClose"),
         mImg=$("mImg"), mTitle=$("mTitle"), mSub=$("mSub"), mSizes=$("mSizes"),
         mAITitle=$("mAITitle"), mAIWrap=$("mAIWrap"),
-        mMetaTitle=$("mMetaTitle"), mMeta=$("mMeta"), mKeep=$("mKeep"),
+        mMetaTitle=$("mMetaTitle"), mMeta=$("mMeta"), mKeep=$("mKeep"), mAdd=$("mAdd"),
         mActions=$("mActions"), iosHint=$("iosHint"),
         langBtn=$("langBtn"), themeBtn=$("themeBtn"), statCleaned=$("statCleaned"),
         geoModal=$("geoModal"), geoBackdrop=$("geoBackdrop"), geoClose=$("geoClose"),
@@ -438,6 +458,9 @@
   // Selezione corrente: `keepSet` contiene gli id che l'utente ha DEselezionato,
   // cioè quelli da conservare. Vuoto = comportamento storico, rimuovi tutto.
   let keepSet=new Set(), cleanEngine="reencode", currentBuf=null, lastClean=null;
+  // Valori che l'utente chiede di SCRIVERE nel file, non di conservare da esso.
+  let injectName="", injectLat="", injectLon="";
+  const AUTHOR_KEY="nm_author";
 
   function fmtBytes(b){
     if(b<1024) return b+" B";
@@ -456,6 +479,10 @@
     else statCleaned.hidden=true;
   }
   function incCount(){ writeStore(COUNT_KEY, String(getCount()+1)); renderCount(); }
+
+  // Il nome dell'autore sopravvive alla sessione: chi marchia molte foto non lo
+  // riscrive ogni volta. Resta sul dispositivo, come lingua e tema.
+  injectName = readStore(AUTHOR_KEY) || "";
 
   /* ====================== PARSING METADATI ====================== */
   // Legge la struttura TIFF/EXIF (Make, Model, Data, Software, GPS). Tutto è
@@ -1051,15 +1078,29 @@
   // comunque una firma non valida.
   const KEEPABLE_IDS=["gps","camera","datetime","software","artist","copyright"];
 
-  // TIFF ammette solo ASCII a 7 bit: il resto viene scartato, non tradotto.
+  /* TIFF dichiara ASCII a 7 bit, ma i lettori — incluso `parseTIFF` qui sopra,
+     che fa `String.fromCharCode(byte)` — decodificano Latin-1. Accettarlo permette
+     di scrivere «©» e i nomi accentati senza storpiarli, cosa che conta da quando
+     i valori li digita l'utente. Fuori da Latin-1 (cirillico, CJK) non esiste un
+     byte singolo: quei caratteri si scartano, non si traducono in altro. */
   function sanitizeAscii(value){
     if(value==null) return "";
     const src=String(value); let out="";
     for(let i=0;i<src.length && out.length<MAX_META_CHARS;i++){
       const c=src.charCodeAt(i);
-      if(c>=0x20 && c<=0x7E) out+=src[i];
+      if((c>=0x20 && c<=0x7E) || (c>=0xA0 && c<=0xFF)) out+=src[i];
     }
     return out.trim();
+  }
+
+  /* «© 2026 Mario Rossi». L'anno viene dalla data di scatto quando il file la
+     conserva — è l'anno in cui la foto è stata fatta, non quello in cui la si
+     ripulisce — altrimenti dall'orologio di sistema. */
+  function composeCopyright(name,capturedAt){
+    const clean=sanitizeAscii(name);
+    if(!clean) return "";
+    const m=capturedAt ? /^(\d{4})/.exec(String(capturedAt)) : null;
+    return "\u00a9 "+(m?m[1]:new Date().getFullYear())+" "+clean;
   }
   function exifAsciiEntry(tag,value){
     const clean=sanitizeAscii(value);
@@ -1175,25 +1216,33 @@
 
   /* Filtra i valori letti dal file tenendo solo gli id selezionati dall'utente.
      `withOrientation` vale solo per il motore senza ricodifica. */
-  function keptExifValues(exif,keep,withOrientation){
-    if(!exif || !keep || !keep.size) return withOrientation && exif && exif.orientation ? {orientation:exif.orientation} : null;
+  function keptExifValues(exif,keep,withOrientation,inject){
     const out={};
-    if(keep.has("camera")){ out.make=exif.make; out.model=exif.model; }
-    if(keep.has("datetime")){ out.datetime=exif.datetime; out.dateOriginal=exif.dateOriginal; }
-    if(keep.has("software")) out.software=exif.software;
-    if(keep.has("artist")) out.artist=exif.artist;
-    if(keep.has("copyright")) out.copyright=exif.copyright;
-    if(keep.has("gps")) out.gps=exif.gps;
-    if(withOrientation && exif.orientation) out.orientation=exif.orientation;
-    return out;
+    if(exif && keep && keep.size){
+      if(keep.has("camera")){ out.make=exif.make; out.model=exif.model; }
+      if(keep.has("datetime")){ out.datetime=exif.datetime; out.dateOriginal=exif.dateOriginal; }
+      if(keep.has("software")) out.software=exif.software;
+      if(keep.has("artist")) out.artist=exif.artist;
+      if(keep.has("copyright")) out.copyright=exif.copyright;
+      if(keep.has("gps")) out.gps=exif.gps;
+    }
+    if(withOrientation && exif && exif.orientation) out.orientation=exif.orientation;
+    // Ciò che l'utente scrive vince su ciò che c'era nel file: se ha digitato un
+    // nome o una posizione, è quella che vuole nel file finale.
+    if(inject){
+      if(inject.artist) out.artist=inject.artist;
+      if(inject.copyright) out.copyright=inject.copyright;
+      if(inject.gps) out.gps=inject.gps;
+    }
+    return Object.keys(out).length ? out : null;
   }
 
   /* Costruisce il TIFF da reinserire, o null se non c'è nulla da conservare.
      Un errore di serializzazione non deve mai impedire la pulizia: si perde la
      conservazione, non la rimozione. */
-  function buildKeptExif(exif,keep,withOrientation){
+  function buildKeptExif(exif,keep,withOrientation,inject){
     try{
-      const values=keptExifValues(exif,keep,withOrientation);
+      const values=keptExifValues(exif,keep,withOrientation,inject);
       if(!values) return null;
       const tiff=buildExifTIFF(values);
       return tiff.length?tiff:null;
@@ -1394,16 +1443,17 @@
     const keep=(opts&&opts.keep)||null;
     const engine=(opts&&opts.engine)||"reencode";
     const exif=(opts&&opts.exif)||null;
+    const inject=(opts&&opts.inject)||null;
 
     // Motore senza ricodifica: si lavora sui byte originali, i pixel non si toccano.
     if(engine==="lossless" && opts && opts.buf){
       const type=sniffImageType(opts.buf,file.type)||file.type;
-      const exifBytes=buildKeptExif(exif,keep,true);   // orientamento sempre riportato
+      const exifBytes=buildKeptExif(exif,keep,true,inject);   // orientamento sempre riportato
       const out=cleanLossless(opts.buf,type,exifBytes);
       if(out){
         const blob=new Blob([out],{type});
         const dim=await imageSize(blob);
-        return {blob,type,w:dim.w,h:dim.h,engine:"lossless",keptExif:!!(keep&&keep.size&&exifBytes)};
+        return {blob,type,w:dim.w,h:dim.h,engine:"lossless",keptExif:!!((keep&&keep.size||inject)&&exifBytes)};
       }
       // Formato non tagliabile a mano (es. HEIC): si ricade sulla ricodifica.
     }
@@ -1428,7 +1478,7 @@
     let blob=await new Promise(r=>canvas.toBlob(r,outType,quality));
     // L'orientamento è già cotto nei pixel da `imageOrientation:"from-image"`:
     // riscrivere il tag farebbe ruotare l'immagine una seconda volta.
-    const exifBytes=buildKeptExif(exif,keep,false);
+    const exifBytes=buildKeptExif(exif,keep,false,inject);
     let keptExif=!!exifBytes;
     // Per i JPEG, togli i segmenti APP/commenti reintrodotti dall'encoder del
     // browser, e reinserisci l'EXIF ricostruito se l'utente ha scelto di tenerne.
@@ -1469,8 +1519,8 @@
   // Riepilogo sotto i pulsanti di scelta, ricalcolato (anche al cambio lingua).
   // Il pulsante di scelta compare solo se c'è davvero qualcosa da conservare.
   function syncChooseBtn(){
-    const n=(lastReport&&lastReport.items||[]).filter(x=>x.keepable).length;
-    actChoose.hidden = n===0;
+    // Visibile anche su un file senza metadati: da lì si scrivono autore e posizione.
+    actChoose.hidden = !lastReport;
   }
 
   function setChoiceHint(){
@@ -1494,6 +1544,7 @@
     batchURLs=[]; batchItems=[]; batchList.innerHTML="";
     lastReport=null; lastAI=null; lastSizes=null; cleanedFile=null;
     keepSet=new Set(); cleanEngine="reencode"; currentBuf=null; lastClean=null;
+    injectLat=""; injectLon="";   // il nome resta, la posizione è di questo scatto
     actChoose.hidden=true;
     choiceHint.textContent="";
     if(cleanedURL){URL.revokeObjectURL(cleanedURL);cleanedURL=null;}
@@ -1630,13 +1681,17 @@
     const file=currentFile, generation=analysisGeneration;
     choice.style.visibility="hidden";
     chip.classList.add("show"); chiptx.textContent=t("chip.cleaning"); frame.classList.add("scanning");
+    // Catturato una volta: serve alla pulizia e al riepilogo, e deve essere
+    // lo stesso valore in entrambi.
+    const injected=injectionValues();
     let cleaned;
     try{
       cleaned=await cleanImage(file,{
         keep:keepSet,
         engine:losslessAvailable()?cleanEngine:"reencode",
         exif:lastReport&&lastReport.exif,
-        buf:currentBuf
+        buf:currentBuf,
+        inject:injected
       });
     }
     catch(e){
@@ -1654,7 +1709,7 @@
     cleanedURL=URL.createObjectURL(cleaned.blob);
     preview.src=cleanedURL;
     lastSizes={orig:file.size, clean:cleaned.blob.size, w:cleaned.w, h:cleaned.h};
-    lastClean={engine:cleaned.engine, keptExif:cleaned.keptExif, keep:new Set(keepSet)};
+    lastClean={engine:cleaned.engine, keptExif:cleaned.keptExif, keep:new Set(keepSet), inject:injected};
     choice.style.visibility="visible";
     incCount();   // +1 immagine ripulita su questo dispositivo (solo locale)
 
@@ -1756,8 +1811,38 @@
       mMeta.appendChild(e);
     }
 
+    if(!analyzeOnly) renderAddedRows();
+    renderAddForm(chooseMode);
     renderKeepControls(analyzeOnly);
     buildActions(analyzeOnly);
+  }
+
+  /* Dopo la pulizia mostra anche ciò che è stato SCRITTO nel file. Senza queste
+     righe l'utente inietterebbe una posizione senza vederne conferma da nessuna
+     parte, e il riepilogo racconterebbe solo metà dell'operazione. */
+  function renderAddedRows(){
+    const inject=lastClean&&lastClean.inject;
+    if(!inject) return;
+    const rows=[];
+    if(inject.gps) rows.push({ico:"\ud83d\udccd",kKey:"meta.gps",v:inject.gps.lat.toFixed(5)+", "+inject.gps.lon.toFixed(5)});
+    if(inject.artist) rows.push({ico:"\u270d\ufe0f",kKey:"meta.artist",v:inject.artist});
+    if(inject.copyright) rows.push({ico:"\u00a9\ufe0f",kKey:"meta.copyright",v:inject.copyright});
+    if(!rows.length) return;
+
+    const head=document.createElement("div");
+    head.className="m-section-title m-added-title";
+    head.textContent=t("meta.addedTitle");
+    mMeta.appendChild(head);
+
+    rows.forEach(it=>{
+      const el=document.createElement("div");
+      el.className="m-row kept";
+      // esc(): il nome lo digita l'utente, ma resta input non fidato per il DOM.
+      el.innerHTML='<div class="ic">'+esc(it.ico)+'</div><div class="tx">'+
+        '<div class="k">'+esc(t(it.kKey))+'<span class="pill added">'+esc(t("meta.addedPill"))+'</span></div>'+
+        '<div class="v">'+esc(it.v)+'</div></div>';
+      mMeta.appendChild(el);
+    });
   }
 
   /* Casella per una voce conservabile. Spuntata = verrà rimossa: il default è
@@ -1780,6 +1865,153 @@
     });
     wrap.appendChild(box); wrap.appendChild(txt);
     return wrap;
+  }
+
+  /* ====================== METADATI DA SCRIVERE ======================
+     Non è l'opposto della pulizia: l'utente rimuove ciò che non vuole e scrive
+     ciò che vuole. I valori passano dallo stesso `buildExifTIFF` usato per le
+     voci conservate, quindi nel file esce sempre e solo ciò che noMeta serializza. */
+
+  /* Accetta il punto e la virgola decimale: chi incolla da Google Maps in
+     italiano si ritrova spesso la virgola. */
+  function parseCoord(value){
+    const t=String(value==null?"":value).trim().replace(",",".");
+    if(!t || !/^[-+]?\d*\.?\d+$/.test(t)) return NaN;
+    return parseFloat(t);
+  }
+  /* «41.9028, 12.4964» incollato in un solo campo: due numeri con il punto
+     decimale separati da virgola non sono ambigui, quindi li dividiamo. */
+  function splitPastedPair(text){
+    const m=/^\s*([-+]?\d+\.\d+)\s*[,;\s]\s*([-+]?\d+\.\d+)\s*$/.exec(String(text||""));
+    return m ? [m[1],m[2]] : null;
+  }
+  function injectedGps(){
+    const lat=parseCoord(injectLat), lon=parseCoord(injectLon);
+    if(!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    if(lat<-90||lat>90||lon<-180||lon>180) return null;
+    return {lat,lon};
+  }
+  /* Traduce il modulo in valori EXIF; null se non c'è nulla da scrivere, così
+     senza compilare niente il percorso resta identico a prima. */
+  function injectionValues(){
+    const out={};
+    const name=sanitizeAscii(injectName);
+    if(name){
+      const exif=lastReport&&lastReport.exif;
+      out.artist=name;
+      out.copyright=composeCopyright(name, exif&&(exif.dateOriginal||exif.datetime));
+    }
+    const gps=injectedGps();
+    if(gps) out.gps=gps;
+    return Object.keys(out).length?out:null;
+  }
+
+  let addPreview=null, addLat=null, addLon=null, addGeoMsg=null;
+
+  /* Ricostruito solo all'apertura della modale e al cambio lingua: mai mentre si
+     digita, o il campo perderebbe il focus a ogni tasto. */
+  function renderAddForm(chooseMode){
+    if(!chooseMode){ mAdd.hidden=true; mAdd.innerHTML=""; addPreview=addLat=addLon=addGeoMsg=null; return; }
+    mAdd.hidden=false;
+    mAdd.innerHTML="";
+
+    const title=document.createElement("p");
+    title.className="m-add-t"; title.textContent=t("add.title");
+    const sub=document.createElement("p");
+    sub.className="m-add-sub"; sub.textContent=t("add.sub");
+    mAdd.appendChild(title); mAdd.appendChild(sub);
+
+    const field=(labelKey,value,placeholder,onInput,extraClass)=>{
+      const wrap=document.createElement("label");
+      wrap.className="m-field"+(extraClass?" "+extraClass:"");
+      const lab=document.createElement("span"); lab.textContent=t(labelKey);
+      const inp=document.createElement("input");
+      inp.type="text"; inp.value=value; inp.placeholder=placeholder;
+      inp.autocomplete="off"; inp.spellcheck=false;
+      inp.maxLength=MAX_META_CHARS;
+      inp.addEventListener("input",()=>onInput(inp));
+      wrap.appendChild(lab); wrap.appendChild(inp);
+      return {wrap,inp};
+    };
+
+    const name=field("add.name",injectName,t("add.namePh"),inp=>{
+      injectName=inp.value;
+      writeStore(AUTHOR_KEY,injectName);   // solo il nome, non le coordinate
+      syncAddPreview();
+    });
+    mAdd.appendChild(name.wrap);
+
+    addPreview=document.createElement("p");
+    addPreview.className="m-add-prev";
+    mAdd.appendChild(addPreview);
+
+    const coords=document.createElement("div");
+    coords.className="m-coords";
+    const lat=field("add.lat",injectLat,"41.9028",inp=>{
+      const pair=splitPastedPair(inp.value);
+      if(pair){ inp.value=pair[0]; injectLon=pair[1]; if(addLon) addLon.value=pair[1]; }
+      injectLat=inp.value; syncAddPreview();
+    });
+    const lon=field("add.lon",injectLon,"12.4964",inp=>{ injectLon=inp.value; syncAddPreview(); });
+    addLat=lat.inp; addLon=lon.inp;
+    lat.inp.inputMode="decimal"; lon.inp.inputMode="decimal";
+    coords.appendChild(lat.wrap); coords.appendChild(lon.wrap);
+    mAdd.appendChild(coords);
+
+    if(navigator.geolocation){
+      const geo=document.createElement("button");
+      geo.type="button"; geo.className="btn btn-ghost m-geo-btn";
+      geo.textContent=t("add.useMyPos");
+      geo.addEventListener("click",()=>useMyPosition(geo));
+      mAdd.appendChild(geo);
+      const note=document.createElement("p");
+      note.className="m-add-note"; note.textContent=t("add.geoNote");
+      mAdd.appendChild(note);
+    }
+
+    addGeoMsg=document.createElement("p");
+    addGeoMsg.className="m-add-msg";
+    mAdd.appendChild(addGeoMsg);
+
+    syncAddPreview();
+  }
+
+  /* Mostra esattamente ciò che finirà nel file: niente sorprese al download. */
+  function syncAddPreview(){
+    if(!addPreview) return;
+    const v=injectionValues();
+    const parts=[];
+    if(v&&v.copyright) parts.push(v.copyright);
+    if(v&&v.gps) parts.push(v.gps.lat.toFixed(5)+", "+v.gps.lon.toFixed(5));
+    addPreview.textContent = parts.length ? t("add.preview")+" "+parts.join("  ·  ") : "";
+    addPreview.hidden = !parts.length;
+    // Segnala coordinate incomplete o fuori range, invece di ignorarle in silenzio.
+    if(addGeoMsg){
+      const someCoord=String(injectLat).trim()||String(injectLon).trim();
+      addGeoMsg.textContent = (someCoord && !injectedGps()) ? t("add.coordsInvalid") : "";
+    }
+    if(typeof buildActions==="function" && modalMode==="choose") buildActions(true);
+  }
+
+  /* `navigator.geolocation` non è una chiamata della pagina: la CSP non la blocca
+     e su telefono usa il GPS locale. Su desktop però il browser può contattare un
+     servizio di localizzazione, perciò accanto al pulsante c'è la nota. */
+  function useMyPosition(btn){
+    if(!navigator.geolocation || !addGeoMsg) return;
+    btn.disabled=true;
+    addGeoMsg.textContent=t("add.geoWait");
+    navigator.geolocation.getCurrentPosition(pos=>{
+      injectLat=pos.coords.latitude.toFixed(6);
+      injectLon=pos.coords.longitude.toFixed(6);
+      if(addLat) addLat.value=injectLat;
+      if(addLon) addLon.value=injectLon;
+      btn.disabled=false;
+      addGeoMsg.textContent="";
+      syncAddPreview();
+    },err=>{
+      btn.disabled=false;
+      addGeoMsg.textContent = (err&&err.code===1) ? t("add.geoDenied") : t("add.geoFailed");
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
   }
 
   // Il taglio senza ricodifica esiste solo per i contenitori che sappiamo
@@ -1833,7 +2065,7 @@
       iosHint.classList.remove("show");
       const c=document.createElement("button");
       c.className="btn btn-primary";
-      const keptNow=(lastReport&&lastReport.items||[]).some(x=>x.keepable&&keepSet.has(x.id));
+      const keptNow=(lastReport&&lastReport.items||[]).some(x=>x.keepable&&keepSet.has(x.id)) || !!injectionValues();
       c.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l4-1 11-11-3-3L4 17l-1 4z"/><path d="M14 6l3 3"/></svg>'+esc(t(keptNow?"btn.applyClean":"btn.clean"));
       c.onclick=()=>{ closeModal(); doClean(); };
       mActions.appendChild(c);
@@ -1956,6 +2188,7 @@
     cleanedFile=null; currentFile=null; lastReport=null; lastSizes=null; lastAI=null;
     // currentBuf può pesare fino a MAX_FILE_BYTES: va rilasciato subito.
     keepSet=new Set(); cleanEngine="reencode"; currentBuf=null; lastClean=null;
+    injectLat=""; injectLon="";   // il nome resta, la posizione è di questo scatto
     actChoose.hidden=true;
   }
 

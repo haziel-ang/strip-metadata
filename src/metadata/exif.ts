@@ -72,14 +72,22 @@ type Entry = {
   pointerTo?: SubIfd;
 };
 
-/** TIFF ammette solo ASCII a 7 bit: tutto il resto viene scartato, non tradotto. */
+/**
+ * TIFF dichiara ASCII a 7 bit, ma in pratica i lettori — incluso `parseTIFF` in
+ * app.js, che fa `String.fromCharCode(byte)` — decodificano Latin-1. Accettare
+ * Latin-1 permette di scrivere «©» e i nomi accentati senza storpiarli, cosa che
+ * conta da quando i valori li digita l'utente e non arrivano solo dai file.
+ * Fuori da Latin-1 (cirillico, CJK) non c'è un byte singolo: quei caratteri
+ * vengono scartati, non tradotti in qualcosa di diverso.
+ */
 function sanitizeAscii(value: string | undefined): string {
   if (value == null) return "";
   const source = String(value);
   let out = "";
   for (let i = 0; i < source.length && out.length < MAX_META_CHARS; i += 1) {
     const code = source.charCodeAt(i);
-    if (code >= 0x20 && code <= 0x7e) out += source[i];
+    const printable = (code >= 0x20 && code <= 0x7e) || (code >= 0xa0 && code <= 0xff);
+    if (printable) out += source[i];
   }
   return out.trim();
 }
@@ -140,6 +148,20 @@ export function degreesToDMS(value: number): Array<[number, number]> {
     [minutes, 1],
     [seconds, 10000]
   ];
+}
+
+/**
+ * Compone il copyright nella forma convenzionale «© 2026 Mario Rossi».
+ * L'anno viene dalla data di scatto quando il file la conserva — è l'anno in cui
+ * la foto è stata fatta, non quello in cui la si ripulisce — altrimenti
+ * dall'orologio di sistema. Restituisce stringa vuota senza un nome.
+ */
+export function composeCopyright(name: string | undefined, capturedAt?: string, now: Date = new Date()): string {
+  const clean = sanitizeAscii(name);
+  if (!clean) return "";
+  const match = capturedAt ? /^(\d{4})/.exec(String(capturedAt)) : null;
+  const year = match ? match[1] : String(now.getFullYear());
+  return `\u00a9 ${year} ${clean}`;
 }
 
 function normalizeGps(gps: GpsCoords | undefined): GpsCoords | null {

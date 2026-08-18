@@ -30,8 +30,9 @@ tutti i metadati** fa esattamente questo, senza chiedere nulla. Se invece vuoi
 *conservare* qualcosa — la posizione GPS di uno scatto, il tuo nominativo come
 autore — premi **Scegli cosa conservare**: si apre una schermata dedicata dove
 ogni voce conservabile ha una casella, e spuntata significa «rimuovi». Basta
-togliere la spunta alle voci da tenere. Il pulsante compare solo quando il file
-contiene voci effettivamente conservabili.
+togliere la spunta alle voci da tenere. Da quella stessa schermata si scrivono
+anche i propri dati, quindi il pulsante c'è anche su un file già privo di
+metadati.
 
 Sono conservabili solo i campi EXIF di base, che noMeta **riscrive da zero**:
 posizione GPS, fotocamera, data e ora, software, autore, copyright. Tutto il
@@ -48,8 +49,23 @@ Puoi scegliere **come** viene costruito il file pulito:
   *blacklist*: sopravvive ciò che noMeta non riconosce. Non disponibile per HEIC,
   che va per forza convertito.
 
-Con più immagini insieme (modalità batch) la pulizia resta totale: la selezione
-è disponibile solo sul singolo file.
+**Scrittura dei propri dati.** Nella stessa schermata puoi anche *aggiungere*
+metadati, non solo toglierne: il tuo nome come autore e una posizione. Il
+copyright viene composto da solo nella forma `© 2019 Mario Rossi`, con l'anno
+preso dalla data di scatto quando il file la conserva — l'anno in cui la foto è
+stata fatta, non quello in cui la ripulisci — altrimenti dall'anno corrente.
+
+Le coordinate si scrivono a mano (accetta sia il punto sia la virgola decimale, e
+capisce un `41.9028, 12.4964` incollato in un campo solo) oppure con **Usa la mia
+posizione**. Il nome resta salvato in `localStorage` per la volta successiva; la
+posizione no, perché cambia a ogni scatto. Quello che verrà scritto è mostrato in
+anteprima prima di procedere, e nel riepilogo finale come voce «aggiunto».
+
+Ciò che scrivi passa dallo stesso serializzatore usato per le voci conservate:
+nel file esce sempre e solo ciò che noMeta compone byte per byte.
+
+Con più immagini insieme (modalità batch) la pulizia resta totale: né selezione
+né scrittura sono disponibili nel batch.
 
 **Analisi AI.** Legge i metadati del file (non i pixel) e cerca segnali di
 origine artificiale in quattro categorie:
@@ -166,6 +182,13 @@ privacy ne ha diritto.
 **Non usarlo** per spacciare contenuti AI come reali o per rimuovere
 l'attribuzione altrui. In molte giurisdizioni (es. EU AI Act) dichiarare
 l'origine AI è obbligatorio.
+
+La scrittura dei metadati serve a **rivendicare il proprio lavoro**: firmare i
+tuoi scatti, rimettere una posizione che un social ha cancellato. Non serve a
+attribuirsi il lavoro di altri né a costruire una provenienza falsa. Un dato
+scritto a mano non è una prova di nulla: chiunque può scriverne uno diverso, ed è
+esattamente il motivo per cui l'analisi in questa stessa app tratta i metadati
+come indizi e mai come perizie.
 
 ## Licenza
 

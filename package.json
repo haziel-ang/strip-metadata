@@ -1,6 +1,6 @@
 {
   "name": "strip-metadata",
-  "version": "1.13.4",
+  "version": "1.14.0",
   "private": true,
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173",
