@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.13.2 — 2026-08-18
+
+- «Scegli cosa conservare» apriva la stessa modale dell'analisi, che mostra per
+  prima l'analisi dell'origine AI: su telefono le caselle finivano sotto la
+  piega, dopo un blocco lungo da scorrere. La schermata di scelta è ora una
+  modalità a sé, senza il pannello AI, e si apre direttamente sulla selezione.
+- Titolo e sottotitolo dedicati: «Scegli cosa conservare» / «Togli la spunta
+  alle voci che vuoi lasciare nel file».
+- L'analisi dell'origine AI resta invariata e raggiungibile dal suo pulsante.
+
 ## v1.13.1 — 2026-08-18
 
 - La rimozione selettiva era di fatto irraggiungibile: le caselle vivevano solo

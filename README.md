@@ -28,9 +28,10 @@ vengono convertiti in JPG. Supporta JPG, PNG, WebP, HEIC.
 **Rimozione selettiva.** Di default viene rimosso tutto: il pulsante **Rimuovi
 tutti i metadati** fa esattamente questo, senza chiedere nulla. Se invece vuoi
 *conservare* qualcosa — la posizione GPS di uno scatto, il tuo nominativo come
-autore — premi **Scegli cosa conservare**: ogni voce conservabile ha una casella,
-spuntata significa «rimuovi». Basta togliere la spunta alle voci da tenere. Il
-pulsante compare solo quando il file contiene voci effettivamente conservabili.
+autore — premi **Scegli cosa conservare**: si apre una schermata dedicata dove
+ogni voce conservabile ha una casella, e spuntata significa «rimuovi». Basta
+togliere la spunta alle voci da tenere. Il pulsante compare solo quando il file
+contiene voci effettivamente conservabili.
 
 Sono conservabili solo i campi EXIF di base, che noMeta **riscrive da zero**:
 posizione GPS, fotocamera, data e ora, software, autore, copyright. Tutto il

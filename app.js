@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.13.1
+ * @version 1.13.2
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.13.1";
+  const APP_VERSION="1.13.2";
   // Il popup pubblico avanza solo quando viene pubblicato un changelog pubblico.
   const PUBLIC_RELEASE_VERSION="1.13.0";
   const swAllowed = location.protocol === "https:" ||
@@ -113,6 +113,8 @@
       "err.pixels":"Immagine troppo grande da elaborare (oltre 80 megapixel).",
       "err.format":"Questo formato non è elaborabile in questo browser — prova con un JPG o PNG.",
       "modal.cleanTitle":"Immagine ripulita","modal.analyzeTitle":"Analisi origine AI",
+      "modal.chooseTitle":"Scegli cosa conservare",
+      "modal.chooseSub":"Togli la spunta alle voci che vuoi lasciare nel file.",
       "modal.analyzeSub":"Ecco cosa raccontano le informazioni nascoste nel file.",
       "modal.cleanSubGps":"La posizione e gli altri dati nascosti non ci sono più.",
       "modal.cleanSubItems":"I dati nascosti non ci sono più.",
@@ -244,6 +246,8 @@
       "err.pixels":"Image too large to process (over 80 megapixels).",
       "err.format":"This format can't be processed in this browser — try a JPG or PNG.",
       "modal.cleanTitle":"Image cleaned","modal.analyzeTitle":"AI origin analysis",
+      "modal.chooseTitle":"Choose what to keep",
+      "modal.chooseSub":"Untick the items you want left in the file.",
       "modal.analyzeSub":"Here is what the information hidden in the file says.",
       "modal.cleanSubGps":"The location and other hidden data are gone.",
       "modal.cleanSubItems":"The hidden data is gone.",
@@ -1666,13 +1670,25 @@
     openModal();
   }
 
+  /* Schermata di scelta. È la stessa modale, ma senza il pannello sull'origine
+     AI: quello è lungo e spingerebbe le caselle sotto la piega, che è esattamente
+     il motivo per cui la selezione risultava introvabile. L'analisi AI resta
+     raggiungibile dal suo pulsante. */
+  function showChoose(){
+    if(!currentFile || !lastReport) return;
+    modalMode="choose";
+    populateModal();
+    openModal();
+  }
+
   function populateModal(){
-    const analyzeOnly = modalMode==="analyze";
+    const analyzeOnly = modalMode!=="clean";     // analisi o scelta: si sta ancora decidendo
+    const chooseMode  = modalMode==="choose";
     mImg.src = analyzeOnly ? originalURL : cleanedURL;
 
     if(analyzeOnly){
-      mTitle.textContent=t("modal.analyzeTitle");
-      mSub.textContent=t("modal.analyzeSub");
+      mTitle.textContent=t(chooseMode?"modal.chooseTitle":"modal.analyzeTitle");
+      mSub.textContent=t(chooseMode?"modal.chooseSub":"modal.analyzeSub");
       mSizes.style.display="none";
       mMetaTitle.textContent=(lastReport&&lastReport.items||[]).some(x=>x.keepable)
         ? t("meta.chooseTitle") : t("meta.presentTitle");
@@ -1690,8 +1706,9 @@
       mMetaTitle.textContent=t("meta.removedTitle");
     }
     mAITitle.textContent=t("modal.analyzeTitle");
-
-    renderAI(lastAI, analyzeOnly);
+    mAITitle.hidden=chooseMode;
+    mAIWrap.hidden=chooseMode;
+    if(!chooseMode) renderAI(lastAI, analyzeOnly);
 
     mMeta.innerHTML="";
     if(lastReport && lastReport.items.length){
@@ -1965,7 +1982,7 @@
   // Il pulsante diretto resta il "rimuovi tutto": ignora ed azzera ogni scelta
   // fatta nella modale, così il comportamento predefinito non cambia mai.
   actClean.addEventListener("click",()=>{ keepSet=new Set(); cleanEngine="reencode"; doClean(); });
-  actChoose.addEventListener("click",showAnalysis);
+  actChoose.addEventListener("click",showChoose);
   actAnalyze.addEventListener("click",showAnalysis);
   headerInfoBtn.addEventListener("click",openInfo);
   aiInfoBtn.addEventListener("click",openInfo);
