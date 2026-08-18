@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.14.0 — 2026-08-18
+
+- Scrittura dei propri metadati: dalla schermata di scelta si possono ora
+  *aggiungere* nome dell'autore e posizione, non solo rimuovere. I valori passano
+  dallo stesso `buildExifTIFF` usato per le voci conservate, quindi nel file esce
+  sempre e solo ciò che noMeta serializza.
+- Il copyright viene composto nella forma `© 2019 Mario Rossi`, con l'anno preso
+  dalla data di scatto quando il file la conserva, altrimenti dall'anno corrente.
+  Il nome riempie sia `Artist` (0x013B) sia `Copyright` (0x8298).
+- Coordinate inseribili a mano, con punto o virgola decimale, e riconoscimento di
+  un `41.9028, 12.4964` incollato in un solo campo. In alternativa il pulsante
+  «Usa la mia posizione» (`navigator.geolocation`), facoltativo e accompagnato
+  dalla nota che su desktop il browser può contattare un servizio di rete —
+  limite ora dichiarato in `SECURITY.md`.
+- Il nome dell'autore viene ricordato in `localStorage`; la posizione no, perché
+  cambia a ogni scatto.
+- Anteprima di ciò che verrà scritto prima di procedere, e voci «aggiunto» nel
+  riepilogo finale: prima l'utente non avrebbe avuto conferma da nessuna parte.
+- Lo scrittore EXIF accetta ora Latin-1 e non più solo ASCII a 7 bit: serviva per
+  il simbolo `©` e per non storpiare i nomi accentati, e combacia con il lettore,
+  che decodifica byte per byte. Fuori da Latin-1 i caratteri restano scartati.
+- Il pulsante «Scegli cosa conservare» compare anche su file senza metadati: da
+  lì si scrivono comunque autore e posizione.
+
 ## v1.13.4 — 2026-08-18
 
 - Il badge «i» nell'header usava il carattere `&#8505;` (U+2139 INFORMATION

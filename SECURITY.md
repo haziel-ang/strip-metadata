@@ -35,6 +35,14 @@ né telemetria. Di seguito **ogni misura di sicurezza e cosa serve a evitare**.
   nei WebP) e copia il resto invariato, compreso ciò che non conosce — segmenti
   esotici, thumbnail dentro l'EXIF, byte accodati dopo la fine dei dati immagine.
   In cambio la qualità dell'immagine resta intatta. Il default resta la ricodifica.
+- **«Usa la mia posizione»**: il pulsante chiama `navigator.geolocation`, che è
+  un'API del browser e non una richiesta della pagina — la CSP `connect-src 'none'`
+  non la intercetta e in DevTools continui a non vedere richieste. Su telefono la
+  posizione arriva dal GPS ed è tutto locale; su computer però il browser può
+  ricavarla **contattando un servizio di rete** con i dati di WiFi e celle. Non lo
+  fa noMeta, ma succede sul dispositivo dell'utente: per questo il pulsante è
+  facoltativo, accompagnato da una nota esplicita, e le coordinate si possono
+  sempre scrivere a mano senza che nulla esca.
 - **Voci conservate su richiesta**: se l'utente deseleziona una voce, quel dato
   resta nel file per sua scelta esplicita. Sono conservabili solo campi EXIF di
   base riscritti da noMeta (GPS, fotocamera, data, software, autore, copyright):
