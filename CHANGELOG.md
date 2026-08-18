@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.13.4 — 2026-08-18
+
+- Il badge «i» nell'header usava il carattere `&#8505;` (U+2139 INFORMATION
+  SOURCE), che su iOS ha presentazione emoji: dentro il cerchio blu si vedeva
+  quindi il quadrato arrotondato dell'emoji ℹ️. Sostituito con una `i` normale,
+  come già faceva l'altro pulsante informativo. Resta il solo cerchio pieno.
+
 ## v1.13.3 — 2026-08-18
 
 - Il badge «i» nell'header restava circondato da un riquadro dopo averlo toccato:
