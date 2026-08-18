@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.14.1 — 2026-08-18
+
+- Corretta la codifica dei campi testuali EXIF, che comparivano come `ï¿½ 2026
+  Nome` invece di `© 2026 Nome`. La 1.14.0 scriveva Latin-1, dove «©» è il byte
+  singolo `A9`: una sequenza **UTF-8 non valida**, che qualunque lettore
+  trasforma nel carattere di sostituzione U+FFFD — e U+FFFD ricodificato è
+  proprio `ï¿½`. Ora autore, copyright e gli altri campi di testo vengono scritti
+  in UTF-8, come fanno gli strumenti moderni.
+- Il lettore prova UTF-8 in modalità rigorosa e ricade su Latin-1 quando i byte
+  non lo sono: i file scritti da tool più vecchi continuano a leggersi bene.
+- Come effetto, i caratteri fuori da Latin-1 (giapponese, cirillico, greco) non
+  vengono più scartati ma scritti correttamente.
+
 ## v1.14.0 — 2026-08-18
 
 - Scrittura dei propri metadati: dalla schermata di scelta si possono ora
