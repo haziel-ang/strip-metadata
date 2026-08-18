@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.14.2 — 2026-08-18
+
+- L'estratto grezzo della vista tecnica sembrava contenere testo ripetuto in
+  lingue diverse, ideogrammi compresi. In realtà sono sempre gli stessi byte,
+  letti con quattro codifiche (Latin-1, UTF-8, UTF-16LE, UTF-16BE) e concatenati
+  senza distinzione: la scansione le prova tutte perché un generatore potrebbe
+  scrivere i propri metadati in una qualsiasi di esse.
+- Ogni decodifica ha ora la propria etichetta e il proprio blocco, preceduti da
+  una riga che spiega la ripetizione.
+- Le etichette restano fuori dal testo su cui si decide il verdetto AI: la vista
+  tecnica ha un canale suo, così ciò che scriviamo noi non può influenzare
+  l'analisi.
+
 ## v1.14.1 — 2026-08-18
 
 - Corretta la codifica dei campi testuali EXIF, che comparivano come `ï¿½ 2026
