@@ -73,12 +73,13 @@ type Entry = {
 };
 
 /**
- * TIFF dichiara ASCII a 7 bit, ma in pratica i lettori — incluso `parseTIFF` in
- * app.js, che fa `String.fromCharCode(byte)` — decodificano Latin-1. Accettare
- * Latin-1 permette di scrivere «©» e i nomi accentati senza storpiarli, cosa che
- * conta da quando i valori li digita l'utente e non arrivano solo dai file.
- * Fuori da Latin-1 (cirillico, CJK) non c'è un byte singolo: quei caratteri
- * vengono scartati, non tradotti in qualcosa di diverso.
+ * TIFF dichiara ASCII a 7 bit, ma i campi testuali reali contengono da sempre di
+ * più. Scriviamo **UTF-8**, che è ciò che fanno gli strumenti moderni e ciò che i
+ * lettori si aspettano: un byte Latin-1 isolato come 0xA9 («©») è UTF-8 non
+ * valido e qualsiasi decoder lo trasforma nel carattere di sostituzione U+FFFD,
+ * che ricodificato diventa la sequenza «ï¿½».
+ * Qui si tolgono solo i caratteri di controllo: il resto passa, accenti e CJK
+ * inclusi, ed è `encodeText` a produrre i byte.
  */
 function sanitizeAscii(value: string | undefined): string {
   if (value == null) return "";
@@ -86,17 +87,38 @@ function sanitizeAscii(value: string | undefined): string {
   let out = "";
   for (let i = 0; i < source.length && out.length < MAX_META_CHARS; i += 1) {
     const code = source.charCodeAt(i);
-    const printable = (code >= 0x20 && code <= 0x7e) || (code >= 0xa0 && code <= 0xff);
-    if (printable) out += source[i];
+    const isControl = code < 0x20 || (code >= 0x7f && code <= 0x9f);
+    if (!isControl) out += source[i];
   }
   return out.trim();
+}
+
+/** Testo → byte UTF-8, NUL escluso (lo aggiunge chi costruisce la entry). */
+function encodeText(text: string): Uint8Array {
+  return new TextEncoder().encode(text);
+}
+
+/**
+ * Byte → testo. Prova UTF-8 in modalità rigorosa e, se i byte non lo sono,
+ * ricade su Latin-1: è così che sono scritti i file dei tool più vecchi, e
+ * ricadere è meglio che riempirli di caratteri di sostituzione.
+ */
+function decodeText(bytes: Uint8Array): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    let out = "";
+    for (let i = 0; i < bytes.length; i += 1) out += String.fromCharCode(bytes[i]);
+    return out;
+  }
 }
 
 function asciiEntry(tag: number, value: string | undefined): Entry | null {
   const clean = sanitizeAscii(value);
   if (!clean) return null;
-  const data = new Uint8Array(clean.length + 1);
-  for (let i = 0; i < clean.length; i += 1) data[i] = clean.charCodeAt(i);
+  const encoded = encodeText(clean);
+  const data = new Uint8Array(encoded.length + 1);   // +1: terminatore NUL
+  data.set(encoded, 0);
   return { tag, type: TYPE_ASCII, count: data.length, data };
 }
 
@@ -298,14 +320,15 @@ export function readExifTIFF(bytes: Uint8Array, tiffStart = 0): ParsedExif {
 
     const readAscii = (offset: number, count: number): string => {
       if (offset < 0 || offset >= view.byteLength) return "";
-      const limit = Math.min(count, MAX_META_CHARS, view.byteLength - offset);
-      let value = "";
+      // Il tetto è in byte: in UTF-8 un carattere può occuparne fino a quattro.
+      const limit = Math.min(count, MAX_META_CHARS * 4, view.byteLength - offset);
+      const raw: number[] = [];
       for (let i = 0; i < limit; i += 1) {
         const code = view.getUint8(offset + i);
         if (code === 0) break;
-        value += String.fromCharCode(code);
+        raw.push(code);
       }
-      return value.trim();
+      return decodeText(Uint8Array.from(raw)).trim().slice(0, MAX_META_CHARS);
     };
 
     const readRational = (offset: number): number => {

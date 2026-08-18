@@ -115,10 +115,41 @@ describe("buildExifTIFF", () => {
     expect(parsed.copyright).toBe("© 2026 Mario Rossi");
   });
 
-  it("drops characters that have no single-byte Latin-1 form", () => {
+  it("keeps characters beyond Latin-1, now that text is written as UTF-8", () => {
     const parsed = readExifTIFF(buildExifTIFF({ artist: "日本 Mario" }));
 
-    expect(parsed.artist).toBe("Mario");
+    expect(parsed.artist).toBe("日本 Mario");
+  });
+
+  it("writes text fields as valid UTF-8, so no reader turns them into U+FFFD", () => {
+    const tiff = buildExifTIFF({ copyright: "© 2026 Mario Rossi" });
+    // Il campo va individuato e decodificato in modalità rigorosa: se contenesse
+    // un byte Latin-1 isolato — la causa dei «ï¿½» — questa decodifica fallirebbe.
+    const marker = new TextEncoder().encode("© 2026 Mario Rossi");
+    const haystack = Array.from(tiff).join(",");
+    expect(haystack.includes(Array.from(marker).join(","))).toBe(true);
+    expect(() => new TextDecoder("utf-8", { fatal: true }).decode(marker)).not.toThrow();
+  });
+
+  it("still reads legacy Latin-1 values written by older tools", () => {
+    // «© 2001 Café» come lo scriveva un tool a byte singolo: non è UTF-8 valido,
+    // e il lettore deve ricadere su Latin-1 invece di riempirlo di sostituzioni.
+    const text = "© 2001 Café";
+    const latin1 = Uint8Array.from([...text].map((c) => c.charCodeAt(0)));
+    const tiff = new Uint8Array(8 + 2 + 12 + 4 + latin1.length + 1);
+    const view = new DataView(tiff.buffer);
+    tiff[0] = 0x49; tiff[1] = 0x49;
+    view.setUint16(2, 0x002a, true);
+    view.setUint32(4, 8, true);
+    view.setUint16(8, 1, true);
+    view.setUint16(10, 0x8298, true);   // Copyright
+    view.setUint16(12, 2, true);        // ASCII
+    view.setUint32(14, latin1.length + 1, true);
+    view.setUint32(18, 26, true);       // offset dell'area dati
+    view.setUint32(22, 0, true);        // nessun IFD successivo
+    tiff.set(latin1, 26);
+
+    expect(readExifTIFF(tiff).copyright).toBe(text);
   });
 
   it("truncates oversized strings to the shared metadata cap", () => {

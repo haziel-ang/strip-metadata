@@ -62,7 +62,10 @@ posizione no, perché cambia a ogni scatto. Quello che verrà scritto è mostrat
 anteprima prima di procedere, e nel riepilogo finale come voce «aggiunto».
 
 Ciò che scrivi passa dallo stesso serializzatore usato per le voci conservate:
-nel file esce sempre e solo ciò che noMeta compone byte per byte.
+nel file esce sempre e solo ciò che noMeta compone byte per byte. I campi di
+testo sono scritti in **UTF-8**, come fanno gli strumenti moderni, così accenti,
+simboli e alfabeti non latini restano leggibili ovunque; in lettura noMeta prova
+UTF-8 e ricade su Latin-1 per i file scritti da tool più vecchi.
 
 Con più immagini insieme (modalità batch) la pulizia resta totale: né selezione
 né scrittura sono disponibili nel batch.

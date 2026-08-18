@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.14.0
+ * @version 1.14.1
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.14.0";
+  const APP_VERSION="1.14.1";
   // Il popup pubblico avanza solo quando viene pubblicato un changelog pubblico.
   const PUBLIC_RELEASE_VERSION="1.14.0";
   const swAllowed = location.protocol === "https:" ||
@@ -498,7 +498,11 @@
       function readASCII(off,count){
         // SICUREZZA — Bound-check: non leggere fuori dal buffer.
         if(off<0 || off>=view.byteLength) return "";
-        count=Math.min(count,MAX_META_CHARS,view.byteLength-off);let s="";for(let i=0;i<count;i++){const c=view.getUint8(off+i);if(c===0)break;s+=String.fromCharCode(c);}return s.trim();}
+        // Il tetto è in byte: in UTF-8 un carattere può occuparne fino a quattro.
+        count=Math.min(count,MAX_META_CHARS*4,view.byteLength-off);
+        const raw=[];
+        for(let i=0;i<count;i++){const c=view.getUint8(off+i);if(c===0)break;raw.push(c);}
+        return decodeExifText(Uint8Array.from(raw)).trim().slice(0,MAX_META_CHARS);}
       function readRational(off){return u32(off)/u32(off+4);}
       function readIFD(dirStart){
         // SICUREZZA — Bound check: l'IFD non può puntare fuori dal buffer.
@@ -1078,19 +1082,29 @@
   // comunque una firma non valida.
   const KEEPABLE_IDS=["gps","camera","datetime","software","artist","copyright"];
 
-  /* TIFF dichiara ASCII a 7 bit, ma i lettori — incluso `parseTIFF` qui sopra,
-     che fa `String.fromCharCode(byte)` — decodificano Latin-1. Accettarlo permette
-     di scrivere «©» e i nomi accentati senza storpiarli, cosa che conta da quando
-     i valori li digita l'utente. Fuori da Latin-1 (cirillico, CJK) non esiste un
-     byte singolo: quei caratteri si scartano, non si traducono in altro. */
+  /* TIFF dichiara ASCII a 7 bit, ma i campi testuali reali contengono da sempre
+     di più. Scriviamo **UTF-8**, che è ciò che fanno gli strumenti moderni e ciò
+     che i lettori si aspettano: un byte Latin-1 isolato come 0xA9 («©») è UTF-8
+     non valido, e qualsiasi decoder lo trasforma nel carattere di sostituzione
+     U+FFFD — che ricodificato diventa la sequenza «ï¿½».
+     Qui si tolgono solo i caratteri di controllo: il resto passa, accenti e CJK
+     inclusi, ed è `encodeExifText` a produrre i byte. */
   function sanitizeAscii(value){
     if(value==null) return "";
     const src=String(value); let out="";
     for(let i=0;i<src.length && out.length<MAX_META_CHARS;i++){
       const c=src.charCodeAt(i);
-      if((c>=0x20 && c<=0x7E) || (c>=0xA0 && c<=0xFF)) out+=src[i];
+      if(!(c<0x20 || (c>=0x7F && c<=0x9F))) out+=src[i];
     }
     return out.trim();
+  }
+  function encodeExifText(text){ return new TextEncoder().encode(text); }
+  /* Prova UTF-8 in modalità rigorosa e, se i byte non lo sono, ricade su Latin-1:
+     è così che scrivono i tool più vecchi, e ricadere è meglio che riempire il
+     campo di caratteri di sostituzione. */
+  function decodeExifText(bytes){
+    try{ return new TextDecoder("utf-8",{fatal:true}).decode(bytes); }
+    catch(e){ let out=""; for(let i=0;i<bytes.length;i++) out+=String.fromCharCode(bytes[i]); return out; }
   }
 
   /* «© 2026 Mario Rossi». L'anno viene dalla data di scatto quando il file la
@@ -1105,8 +1119,9 @@
   function exifAsciiEntry(tag,value){
     const clean=sanitizeAscii(value);
     if(!clean) return null;
-    const data=new Uint8Array(clean.length+1);
-    for(let i=0;i<clean.length;i++) data[i]=clean.charCodeAt(i);
+    const enc=encodeExifText(clean);
+    const data=new Uint8Array(enc.length+1);   // +1: terminatore NUL
+    data.set(enc,0);
     return {tag,type:2,count:data.length,data};
   }
   function exifShortEntry(tag,value){
