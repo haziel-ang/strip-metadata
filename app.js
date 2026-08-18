@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.14.1
+ * @version 1.14.2
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.14.1";
+  const APP_VERSION="1.14.2";
   // Il popup pubblico avanza solo quando viene pubblicato un changelog pubblico.
   const PUBLIC_RELEASE_VERSION="1.14.0";
   const swAllowed = location.protocol === "https:" ||
@@ -184,6 +184,8 @@
       "ai.debug.failed":"Compressi non aperti",
       "ai.debug.bytes":"Byte campionati",
       "ai.debug.raw":"Estratto grezzo",
+      "ai.debug.rawNote":"Sono gli stessi byte letti con codifiche diverse: la scansione le prova tutte perché un generatore potrebbe scrivere i metadati in una qualsiasi di esse.",
+      "ai.debug.otherText":"Testo dei blocchi",
       "ai.action.k":"Cosa dichiara la cronologia",
       "ai.action.created":"Immagine o risorsa creata",
       "ai.action.edited":"Immagine modificata o composta",
@@ -327,6 +329,8 @@
       "ai.debug.failed":"Compressed not opened",
       "ai.debug.bytes":"Sampled bytes",
       "ai.debug.raw":"Raw excerpt",
+      "ai.debug.rawNote":"These are the same bytes read with different encodings: the scan tries them all, because a generator could write its metadata in any of them.",
+      "ai.debug.otherText":"Block text",
       "ai.action.k":"What the image history declares",
       "ai.action.created":"Image or asset created",
       "ai.action.edited":"Image edited or composed",
@@ -745,7 +749,17 @@
   async function aiScan(buf,type){
     const view=new DataView(buf), parts=[];
     const flags={c2paBox:false,compressedTextKeys:[],decompressedTextKeys:[],failedCompressedTextKeys:[]};
-    const debug={chunks:[],rawSample:"",scanBytes:0};
+    const debug={chunks:[],rawSample:"",scanBytes:0,samples:[]};
+    /* Solo per la vista tecnica: lo stesso testo raggruppato per codifica di
+       provenienza. Deliberatamente separato da `parts`, che è il corpus su cui si
+       decide il verdetto AI: quello non deve contenere stringhe scritte da noi. */
+    const byEncoding=new Map();
+    function noteSample(label,text){
+      if(!text) return;
+      const prev=byEncoding.get(label)||"";
+      if(prev.length>=MAX_AI_DEBUG_CHARS) return;
+      byEncoding.set(label, prev+(prev?" ":"")+text);
+    }
     let scanned=0, textChars=0;
     function addText(s){
       if(!s || textChars>=MAX_SCAN_BYTES) return;
@@ -753,21 +767,30 @@
       if(!text) return;
       parts.push(text); textChars+=text.length;
     }
-    function decodeBytes(u8){
+    /* Gli stessi byte letti con quattro codifiche: un generatore può scrivere i
+       propri metadati in UTF-16 (comune sugli strumenti Windows), e la scansione
+       non deve mancarli solo per la codifica. Le varianti tornano etichettate,
+       così la vista tecnica può dire quale lettura ha prodotto cosa. */
+    function decodeVariants(u8){
       const out=[];
-      function add(s){
+      function add(enc,s){
         if(!s) return;
         // Tieni solo stringhe con una minima densità di caratteri leggibili.
         const readable=(s.match(/[A-Za-z0-9:_./ -]/g)||[]).length;
-        if(readable>=3) out.push(s.replace(/\u0000/g," "));
+        if(readable>=3) out.push({enc,text:s.replace(/\u0000/g," ")});
       }
-      try{ add(new TextDecoder("latin1").decode(u8)); }catch(e){}
-      try{ add(new TextDecoder("utf-8").decode(u8)); }catch(e){}
+      try{ add("Latin-1", new TextDecoder("latin1").decode(u8)); }catch(e){}
+      try{ add("UTF-8", new TextDecoder("utf-8").decode(u8)); }catch(e){}
       if(u8.length>3){
-        try{ add(new TextDecoder("utf-16le").decode(u8)); }catch(e){}
-        try{ add(new TextDecoder("utf-16be").decode(u8)); }catch(e){}
+        try{ add("UTF-16LE", new TextDecoder("utf-16le").decode(u8)); }catch(e){}
+        try{ add("UTF-16BE", new TextDecoder("utf-16be").decode(u8)); }catch(e){}
       }
-      return out.join("\n");
+      return out;
+    }
+    function decodeBytes(u8){
+      const variants=decodeVariants(u8);
+      variants.forEach(v=>noteSample(v.enc,v.text));
+      return variants.map(v=>v.text).join("\n");
     }
     function push(start,end){
       if(scanned>=MAX_SCAN_BYTES) return "";
@@ -811,7 +834,7 @@
         }else{
           if(/prompt|parameters|workflow|comfy|stable|generation/i.test(key)) flags.compressedTextKeys.push(key);
           flags.failedCompressedTextKeys.push(key||"zTXt");
-          addText(key+" zTXt compressed text metadata");
+          addText(key+" zTXt compressed text metadata"); noteSample("",key+" zTXt compressed text metadata");
         }
         return;
       }
@@ -833,7 +856,7 @@
           }else{
             if(/prompt|parameters|workflow|comfy|stable|generation/i.test(key)) flags.compressedTextKeys.push(key);
             flags.failedCompressedTextKeys.push(key||"iTXt");
-            addText(key+" iTXt compressed text metadata");
+            addText(key+" iTXt compressed text metadata"); noteSample("",key+" iTXt compressed text metadata");
           }
         }else push(ps,end);
       }
@@ -871,7 +894,7 @@
           }
           off+=2+len;
         }
-        addText(app11Text);
+        addText(app11Text); noteSample("",app11Text);
       }else if(type==="image/png"){
         let off=8, chunkCount=0;
         while(off+12<=view.byteLength && chunkCount++<MAX_META_CHUNKS){
@@ -902,6 +925,9 @@
     const text=parts.join("\n");
     debug.scanBytes=scanned || Math.min(text.length,MAX_SCAN_BYTES);
     debug.rawSample=normalizeDebugText(text);
+    debug.samples=[...byEncoding]
+      .map(([label,txt])=>({label,text:normalizeDebugText(txt)}))
+      .filter(x=>x.text);
     debug.decompressed=[...new Set(flags.decompressedTextKeys)];
     debug.failedCompressed=[...new Set(flags.failedCompressedTextKeys)];
     return {text, lower:text.toLowerCase(), flags, debug};
@@ -1063,9 +1089,28 @@
     label.className="ai-debug-label";
     label.textContent=t("ai.debug.raw");
     body.appendChild(label);
-    const pre=document.createElement("pre");
-    pre.textContent=dbg.rawSample || t("ai.debug.none");
-    body.appendChild(pre);
+
+    const samples=(dbg.samples||[]).filter(x=>x&&x.text);
+    if(samples.length){
+      // Senza etichette lo stesso contenuto sembrava ripetuto in lingue diverse:
+      // sono gli stessi byte, letti con codifiche diverse.
+      const note=document.createElement("p");
+      note.className="ai-debug-note"; note.textContent=t("ai.debug.rawNote");
+      body.appendChild(note);
+      samples.forEach(sample=>{
+        const enc=document.createElement("div");
+        enc.className="ai-debug-enc";
+        enc.textContent=sample.label || t("ai.debug.otherText");
+        body.appendChild(enc);
+        const block=document.createElement("pre");
+        block.textContent=sample.text;
+        body.appendChild(block);
+      });
+    }else{
+      const pre=document.createElement("pre");
+      pre.textContent=dbg.rawSample || t("ai.debug.none");
+      body.appendChild(pre);
+    }
     details.appendChild(body);
     mAIWrap.appendChild(details);
   }
