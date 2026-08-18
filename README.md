@@ -25,10 +25,12 @@ reinserisce dopo la codifica: i marker APP e COM nei JPEG, il chunk ICCP nei
 WebP. Il file esportato è davvero pulito anche se lo ricarichi. I file HEIC
 vengono convertiti in JPG. Supporta JPG, PNG, WebP, HEIC.
 
-**Rimozione selettiva.** Di default viene rimosso tutto. Se però vuoi
+**Rimozione selettiva.** Di default viene rimosso tutto: il pulsante **Rimuovi
+tutti i metadati** fa esattamente questo, senza chiedere nulla. Se invece vuoi
 *conservare* qualcosa — la posizione GPS di uno scatto, il tuo nominativo come
-autore — apri **Analizza immagine**: ogni voce conservabile ha una casella,
-spuntata significa «rimuovi». Basta togliere la spunta alle voci da tenere.
+autore — premi **Scegli cosa conservare**: ogni voce conservabile ha una casella,
+spuntata significa «rimuovi». Basta togliere la spunta alle voci da tenere. Il
+pulsante compare solo quando il file contiene voci effettivamente conservabili.
 
 Sono conservabili solo i campi EXIF di base, che noMeta **riscrive da zero**:
 posizione GPS, fotocamera, data e ora, software, autore, copyright. Tutto il

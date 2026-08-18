@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.13.0
+ * @version 1.13.1
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.13.0";
+  const APP_VERSION="1.13.1";
   // Il popup pubblico avanza solo quando viene pubblicato un changelog pubblico.
   const PUBLIC_RELEASE_VERSION="1.13.0";
   const swAllowed = location.protocol === "https:" ||
@@ -101,7 +101,7 @@
       "geo.openOSM":"Apri in OpenStreetMap","geo.openGoogle":"Apri in Google Maps",
       "geo.copy":"Copia coordinate","geo.copied":"Copiato ✓",
       "geo.note":"Se apri una mappa, queste coordinate saranno inviate al servizio scelto. noMeta non le invia da sola.",
-      "btn.clean":"Pulisci i metadati","btn.analyze":"Analizza immagine","btn.aiInfo":"Info analisi AI",
+      "btn.clean":"Rimuovi tutti i metadati","btn.choose":"Scegli cosa conservare","btn.applyClean":"Pulisci con queste scelte","btn.analyze":"Analizza immagine","btn.aiInfo":"Info analisi AI",
       "btn.download":"Scarica immagine pulita","btn.share":"Condividi",
       "btn.saveShare":"Salva / Condividi","btn.fullscreen":"Apri a schermo intero",
       "chip.analyzing":"Analisi…","chip.cleaning":"Rimozione metadati…",
@@ -118,6 +118,7 @@
       "modal.cleanSubItems":"I dati nascosti non ci sono più.",
       "modal.cleanSubNone":"L'immagine è stata ricreata senza dati nascosti.",
       "meta.removedTitle":"Metadati rimossi","meta.presentTitle":"Metadati presenti nel file",
+      "meta.chooseTitle":"Scegli cosa rimuovere",
       "meta.removedPill":"rimosso","size.original":"Originale","size.cleaned":"Pulita",
       "empty.unknown":"Questo browser non riesce a leggere tutti i dettagli del formato.",
       "empty.analyzeNone":"Non ho trovato dati nascosti leggibili.",
@@ -231,7 +232,7 @@
       "geo.openOSM":"Open in OpenStreetMap","geo.openGoogle":"Open in Google Maps",
       "geo.copy":"Copy coordinates","geo.copied":"Copied ✓",
       "geo.note":"If you open a map, these coordinates will be sent to that service. noMeta does not send them on its own.",
-      "btn.clean":"Clean metadata","btn.analyze":"Analyze image","btn.aiInfo":"AI analysis info",
+      "btn.clean":"Remove all metadata","btn.choose":"Choose what to keep","btn.applyClean":"Clean with these choices","btn.analyze":"Analyze image","btn.aiInfo":"AI analysis info",
       "btn.download":"Download clean image","btn.share":"Share",
       "btn.saveShare":"Save / Share","btn.fullscreen":"Open fullscreen",
       "chip.analyzing":"Analyzing…","chip.cleaning":"Removing metadata…",
@@ -248,6 +249,7 @@
       "modal.cleanSubItems":"The hidden data is gone.",
       "modal.cleanSubNone":"The image was rebuilt without hidden data.",
       "meta.removedTitle":"Removed metadata","meta.presentTitle":"Metadata present in the file",
+      "meta.chooseTitle":"Choose what to remove",
       "meta.removedPill":"removed","size.original":"Original","size.cleaned":"Cleaned",
       "empty.unknown":"This browser cannot read every detail in this format.",
       "empty.analyzeNone":"I could not find any readable hidden data.",
@@ -404,6 +406,7 @@
   const drop=$("drop"), fileInput=$("file"), stage=$("stage"), frame=$("frame"),
         preview=$("preview"), chip=$("chip"), chiptx=$("chiptx"),
         choice=$("choice"), actClean=$("actClean"), actAnalyze=$("actAnalyze"), aiInfoBtn=$("aiInfoBtn"),
+        actChoose=$("actChoose"),
         choiceHint=$("choiceHint"), reset=$("reset"),
         modal=$("modal"), backdrop=$("backdrop"), mClose=$("mClose"),
         mImg=$("mImg"), mTitle=$("mTitle"), mSub=$("mSub"), mSizes=$("mSizes"),
@@ -1460,7 +1463,14 @@
   }
 
   // Riepilogo sotto i pulsanti di scelta, ricalcolato (anche al cambio lingua).
+  // Il pulsante di scelta compare solo se c'è davvero qualcosa da conservare.
+  function syncChooseBtn(){
+    const n=(lastReport&&lastReport.items||[]).filter(x=>x.keepable).length;
+    actChoose.hidden = n===0;
+  }
+
   function setChoiceHint(){
+    syncChooseBtn();
     if(!lastAI){ choiceHint.textContent=""; return; }
     if(lastAI.level==="detected") choiceHint.textContent=t("hint.detected");
     else if(lastAI.level==="maybe") choiceHint.textContent=t("hint.maybe");
@@ -1480,6 +1490,7 @@
     batchURLs=[]; batchItems=[]; batchList.innerHTML="";
     lastReport=null; lastAI=null; lastSizes=null; cleanedFile=null;
     keepSet=new Set(); cleanEngine="reencode"; currentBuf=null; lastClean=null;
+    actChoose.hidden=true;
     choiceHint.textContent="";
     if(cleanedURL){URL.revokeObjectURL(cleanedURL);cleanedURL=null;}
     if(file.size>MAX_FILE_BYTES){
@@ -1663,7 +1674,8 @@
       mTitle.textContent=t("modal.analyzeTitle");
       mSub.textContent=t("modal.analyzeSub");
       mSizes.style.display="none";
-      mMetaTitle.textContent=t("meta.presentTitle");
+      mMetaTitle.textContent=(lastReport&&lastReport.items||[]).some(x=>x.keepable)
+        ? t("meta.chooseTitle") : t("meta.presentTitle");
     }else{
       mTitle.textContent=t("modal.cleanTitle");
       // Se qualcosa è stato conservato non si può dire che "non c'è più".
@@ -1747,6 +1759,7 @@
       if(box.checked) keepSet.delete(it.id); else keepSet.add(it.id);
       sync();
       renderKeepControls(true);
+      buildActions(true);   // l'etichetta del pulsante dipende dalla selezione
     });
     wrap.appendChild(box); wrap.appendChild(txt);
     return wrap;
@@ -1803,7 +1816,8 @@
       iosHint.classList.remove("show");
       const c=document.createElement("button");
       c.className="btn btn-primary";
-      c.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l4-1 11-11-3-3L4 17l-1 4z"/><path d="M14 6l3 3"/></svg>'+esc(t("btn.clean"));
+      const keptNow=(lastReport&&lastReport.items||[]).some(x=>x.keepable&&keepSet.has(x.id));
+      c.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l4-1 11-11-3-3L4 17l-1 4z"/><path d="M14 6l3 3"/></svg>'+esc(t(keptNow?"btn.applyClean":"btn.clean"));
       c.onclick=()=>{ closeModal(); doClean(); };
       mActions.appendChild(c);
       return;
@@ -1925,6 +1939,7 @@
     cleanedFile=null; currentFile=null; lastReport=null; lastSizes=null; lastAI=null;
     // currentBuf può pesare fino a MAX_FILE_BYTES: va rilasciato subito.
     keepSet=new Set(); cleanEngine="reencode"; currentBuf=null; lastClean=null;
+    actChoose.hidden=true;
   }
 
   /* ====================== EVENTI ====================== */
@@ -1950,6 +1965,7 @@
   // Il pulsante diretto resta il "rimuovi tutto": ignora ed azzera ogni scelta
   // fatta nella modale, così il comportamento predefinito non cambia mai.
   actClean.addEventListener("click",()=>{ keepSet=new Set(); cleanEngine="reencode"; doClean(); });
+  actChoose.addEventListener("click",showAnalysis);
   actAnalyze.addEventListener("click",showAnalysis);
   headerInfoBtn.addEventListener("click",openInfo);
   aiInfoBtn.addEventListener("click",openInfo);

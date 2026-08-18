@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.13.1 — 2026-08-18
+
+- La rimozione selettiva era di fatto irraggiungibile: le caselle vivevano solo
+  dietro «Analizza immagine», che si legge come analisi dell'origine AI. Aggiunto
+  un pulsante dedicato «Scegli cosa conservare» nella schermata di scelta, che
+  compare quando il file ha voci conservabili.
+- Il pulsante principale ora dice «Rimuovi tutti i metadati» invece di «Pulisci i
+  metadati»: distingue senza ambiguità l'azione totale da quella selettiva.
+- Nella modale, il pulsante di conferma diventa «Pulisci con queste scelte»
+  quando qualcosa è stato deselezionato, e il titolo della sezione diventa
+  «Scegli cosa rimuovere». Prima entrambi affermavano una rimozione totale che
+  non corrispondeva più a ciò che sarebbe successo.
+
 ## v1.13.0 — 2026-08-17
 
 - Rimozione selettiva: ogni voce conservabile ha una casella nella modale di
