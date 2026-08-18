@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.13.3 — 2026-08-18
+
+- Il badge «i» nell'header restava circondato da un riquadro dopo averlo toccato:
+  su touch l'hover non si spegne più, così l'alone rimaneva acceso, e l'anello di
+  focus di iOS è squadrato e non segue il cerchio. L'alone è ora riservato ai
+  dispositivi con un vero puntatore e l'anello alla sola navigazione da tastiera.
+  Il badge resta un cerchio pulito dopo il tap.
+
 ## v1.13.2 — 2026-08-18
 
 - «Scegli cosa conservare» apriva la stessa modale dell'analisi, che mostra per

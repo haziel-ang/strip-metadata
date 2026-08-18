@@ -1,6 +1,6 @@
 /*!
  * Pulisci — Rimozione metadati & analisi origine AI
- * @version 1.13.2
+ * @version 1.13.3
  * @year    2026
  * @author  profxeni
  *
@@ -25,7 +25,7 @@
   }
 
   const $=id=>document.getElementById(id);
-  const APP_VERSION="1.13.2";
+  const APP_VERSION="1.13.3";
   // Il popup pubblico avanza solo quando viene pubblicato un changelog pubblico.
   const PUBLIC_RELEASE_VERSION="1.13.0";
   const swAllowed = location.protocol === "https:" ||

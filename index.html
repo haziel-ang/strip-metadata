@@ -2,7 +2,7 @@
 <!--
   ============================================================================
    Pulisci — Rimozione metadati & analisi origine AI
-   Versione : 1.13.2
+   Versione : 1.13.3
    Anno     : 2026
    Sviluppo : profxeni
    Licenza  : CC BY 4.0 — profxeni (copia e remix con citazione dell'autore)
@@ -152,8 +152,16 @@
   .badge-lock{display:inline-flex;align-items:center;gap:6px}
   .lock-ico{width:13px;height:13px;flex:0 0 auto}
   .badge-info{background:var(--accent);color:#fff;border:none;cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s;display:inline-flex;align-items:center;justify-content:center;font-family:"Fraunces",serif;font-size:.95rem;font-weight:600;letter-spacing:0;width:32px;height:32px;padding:0;border-radius:50%;-webkit-tap-highlight-color:transparent}
-  .badge-info:hover{background:var(--accent-deep);box-shadow:0 0 0 6px var(--accent-soft)}
+  /* Su touch l'hover resta "incollato" dopo il tap e l'alone si vede come un
+     riquadro attorno al cerchio: lo teniamo solo dove esiste un vero puntatore. */
+  @media (hover:hover){
+    .badge-info:hover{background:var(--accent-deep);box-shadow:0 0 0 6px var(--accent-soft)}
+  }
   .badge-info:active{transform:scale(.92)}
+  /* L'anello di focus serve a chi naviga da tastiera, non dopo un tap: su iOS
+     quello di default è squadrato e non segue il cerchio. */
+  .badge-info:focus{outline:none}
+  .badge-info:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
   .badge-info .info-i{font-size:1.08rem;font-style:normal;font-weight:600;line-height:1}
   /* Versione nel popup info */
   .info-version{flex:0 0 auto;margin-left:auto;font-size:.72rem;font-weight:600;color:var(--ink-soft);white-space:nowrap;align-self:flex-start;margin-top:2px}
@@ -627,6 +635,6 @@
   </div>
 </div>
 
-<script src="app.js?v=1.13.2" defer></script>
+<script src="app.js?v=1.13.3" defer></script>
 </body>
 </html>
